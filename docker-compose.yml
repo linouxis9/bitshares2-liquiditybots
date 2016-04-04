@@ -1,0 +1,9 @@
+cli-wallet:
+  build: ./bitshares-2-cli-wallet/
+  ports:
+    - "127.0.0.1:8092:8092"
+
+exchange-bot:
+  build: ./docker-exchangebot
+  links:
+    - cli-wallet
