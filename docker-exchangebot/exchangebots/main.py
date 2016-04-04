@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     if len(my_accounts) is 0:
         brain_key = rpc.suggest_brain_key()
-        account_name = config.account_name
+        account_name = config.account
 
         headers = {"Accept": "application/json",
                     "Content-type": "application/json"}
