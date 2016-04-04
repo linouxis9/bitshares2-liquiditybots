@@ -7,8 +7,8 @@ wallet_password       = ""
 # wallet password
 unlock_wallet_password="reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectly" # might want to change this
 
-# account name
-account_name = "liquidity-bot-xdfx1" # prefix liquidity-bot-
+# Your account that executes the trades
+account = "liquidity-bot-xdfx1" # prefix liquidity-bot-
 
 # Websocket URL
 witness_url           = "wss://bitshares.openledger.info/ws"
@@ -17,8 +17,6 @@ witness_url           = "wss://bitshares.openledger.info/ws"
 watch_markets         = ["EUR : BTS", "CAD : BTS"]
 market_separator      = " : "  # separator between assets
 
-# Your account that executes the trades
-account               = "liquidity-bot-r3lp2x"
 
 # If this flag is set to True, nothing will be done really
 safe_mode             = True
