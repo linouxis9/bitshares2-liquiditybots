@@ -1,7 +1,7 @@
 from grapheneexchange import GrapheneExchange
 import json
 import os
-
+import datetime
 
 class MissingSettingsException(Exception):
     pass
@@ -221,7 +221,7 @@ class BaseStrategy():
                         if notify :
                             self.orderFilled(orderid)
 
-    def sell(self, market, price, amount):
+    def sell(self, market, price, amount, expiration=60*10):
         """ Places a sell order in a given market (sell ``quote``, buy
             ``base`` in market ``quote_base``). Required POST parameters
             are "currencyPair", "rate", and "amount". If successful, the
@@ -281,7 +281,7 @@ class BaseStrategy():
     def tick(self) :
         """ Tick every block
         """
-        print("New block. Please define `%s.tick()`" % self.name)
+        print("New block. Default tick() @ %s" % str(datetime.datetime.now()))
 
     def orderFilled(self, oid):
         """ An order has been fully filled
