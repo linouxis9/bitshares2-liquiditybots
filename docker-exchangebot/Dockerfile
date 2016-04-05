@@ -5,4 +5,4 @@ WORKDIR python-graphenelib
 RUN python3 setup.py install
 WORKDIR ../
 RUN rm -rf python-graphenelib
-CMD [ "python", "./exchangebots/main.py" ]
+CMD [ "python", "-u", "./exchangebots/main.py" ]

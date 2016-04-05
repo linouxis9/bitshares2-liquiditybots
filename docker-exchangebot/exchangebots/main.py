@@ -68,7 +68,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
             
-        
+        print("Start loop")
         while True:
             bot.cancel_all()
             print(str(datetime.datetime.now()) + ": sleep")

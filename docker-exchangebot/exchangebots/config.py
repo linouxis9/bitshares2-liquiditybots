@@ -52,7 +52,7 @@ bots["MakerWall"] = {"bot" : MakerSellBuyWalls,
                      # +-percentage offset from target_price
                      "target_price_offset_percentage" : 0.1,
                      # allowed spread, your lowest orders will be placed here
-                     "spread_percentage" : 5,
+                     "spread_percentage" : 0.1,
                      # The amount of funds (%) you want to use
                      "volume_percentage" : 50,
                      # Place symmetric walls on both sides?
