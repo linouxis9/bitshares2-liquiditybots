@@ -1,7 +1,9 @@
 # bitshares2-liquiditybots
 
-1) change password in docker-exchangebot/exchangebot/config.py
-2) change account name in the same config file
-3) execute docker-compose up in the root directory
-4) send funds to the account
-5) restart docker-compose.
+## How to use the docker
+
+* Put your cli_wallet password in docker-exchangebot/exchangebot/config.py
+* Change account name in the same config file
+* Execute docker-compose up in the root directory
+* Send funds to the account
+* Restart docker-compose.
