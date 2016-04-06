@@ -221,7 +221,7 @@ class BaseStrategy():
                         if notify :
                             self.orderFilled(orderid)
 
-    def sell(self, market, price, amount, expiration=60*60*24):
+    def sell(self, market, price, amount):
         """ Places a sell order in a given market (sell ``quote``, buy
             ``base`` in market ``quote_base``). Required POST parameters
             are "currencyPair", "rate", and "amount". If successful, the

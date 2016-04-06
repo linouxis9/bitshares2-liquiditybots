@@ -130,7 +130,8 @@ class MakerRamp(BaseStrategy):
         * **ramp_mode**: "linear" ramp (equal amounts) or "exponential" (linearily increasing amounts)
         * **ramp_price_percentage**: Ramp goes up with volume up to a price increase of x%
         * **ramp_step_percentage**: from spread/2 to ramp_price, place an order every x%
-
+        * **expiration**: expiration time of buy/sell orders.
+        
         .. code-block:: python
 
             bots["MakerRexp"] = {"bot" : MakerRamp,
@@ -144,6 +145,7 @@ class MakerRamp(BaseStrategy):
                                  "ramp_mode" : "linear",
                                  "only_buy" : False,
                                  "only_sell" : False,
+                                 "expiration": 60*60*24*7
                                  }
 
         .. note:: This module does not watch your orders, all it does is
@@ -191,83 +193,135 @@ class MakerRamp(BaseStrategy):
         pass
 
     def place(self) :
-        """ Place all orders according to the settings.
+            """ Place all orders according to the settings.
+            """
+            print("Placing Orders:")
+            #: Amount of Funds available for trading (per asset)
+            if "ramp_mode" not in self.settings:
+                mode = "linear"
+            else :
+                mode = self.settings["ramp_mode"]
+            target_price = self.settings["target_price"]
+            only_sell = True if "only_sell" in self.settings and self.settings["only_sell"] else False
+            only_buy = True if "only_buy" in self.settings and self.settings["only_buy"] else False
+
+            balances = self.dex.returnBalances()
+            asset_ids = []
+            amounts = {}
+            for market in self.settings["markets"]:
+                quote, base = market.split(self.config.market_separator)
+                asset_ids.append(base)
+                asset_ids.append(quote)
+            assets_unique = list(set(asset_ids))
+            for a in assets_unique:
+                if a in balances :
+                    amounts[a] = balances[a] * self.settings["volume_percentage"] / 100 / asset_ids.count(a)
+
+            ticker = self.dex.returnTicker()
+            for m in self.settings["markets"]:
+
+                quote, base = m.split(self.config.market_separator)
+                if isinstance(target_price, float) or isinstance(target_price, int):
+                    base_price = float(target_price)
+                elif (isinstance(target_price, str) and
+                      target_price is "settlement_price" or
+                      target_price is "feed" or
+                      target_price is "price_feed"):
+                    if "settlement_price" in ticker[m] :
+                        base_price = ticker[m]["settlement_price"]
+                    else :
+                        raise Exception("Pair %s does not have a settlement price!" % m)
+
+                    base_price = base_price * (1 + self.settings["target_price_offset_percentage"] / 100)
+
+                if quote in amounts and not only_buy:
+                    price_start  = base_price * (1 + self.settings["spread_percentage"] / 200.0)
+                    price_end    = base_price * (1 + self.settings["ramp_price_percentage"] / 100.0)
+                    if not only_sell :
+                        amount       = min([amounts[quote], amounts[base] / (price_start)]) if base in amounts else amounts[quote]
+                    else:
+                        amount = amounts[quote]
+                    number_orders = math.floor((self.settings["ramp_price_percentage"] / 100.0 - self.settings["spread_percentage"] / 200.0) / (self.settings["ramp_step_percentage"] / 100.0))
+                    if mode == "linear" :
+                        for price in linspace(price_start, price_end, number_orders) :
+                            self.sell(m, price, amount / number_orders)
+                    elif mode == "exponential" :
+                        k = linspace(1 / number_orders, 1, number_orders)
+                        k = [v / sum(k) for v in k]
+                        order_amounts = [v * amount for v in k]
+                        for i, price in enumerate(linspace(price_start, price_end, number_orders)):
+                            self.sell(m, price, order_amounts[i])
+                    else :
+                        raise Exception("ramp_mode '%s' not known" % mode)
+
+                if base in amounts and not only_sell:
+                    price_start  = base_price * (1 - self.settings["spread_percentage"] / 200.0)
+                    price_end    = base_price * (1 - self.settings["ramp_price_percentage"] / 100.0)
+                    if not only_buy:
+                        amount       = min([amounts[quote], amounts[base] / (price_start)]) if quote in amounts else amounts[base] / (price_start)
+                    else:
+                        amount = amounts[base] / price_start
+                    number_orders = math.floor((self.settings["ramp_price_percentage"] / 100.0 - self.settings["spread_percentage"] / 200.0) / (self.settings["ramp_step_percentage"] / 100.0))
+                    if mode == "linear" :
+                        for price in linspace(price_start, price_end, number_orders) :
+                            self.buy(m, price, amount / number_orders)
+                    elif mode == "exponential" :
+                        k = linspace(1 / number_orders, 1, number_orders)
+                        k = [v / sum(k) for v in k]
+                        order_amounts = [v * amount for v in k]
+                        for i, price in enumerate(linspace(price_start, price_end, number_orders)):
+                            self.buy(m, price, order_amounts[i])
+                    else :
+                        raise Exception("ramp_mode '%s' not known" % mode)
+
+    def sell(self, market, price, amount):
+        """ Places a sell order in a given market (sell ``quote``, buy
+            ``base`` in market ``quote_base``). Required POST parameters
+            are "currencyPair", "rate", and "amount". If successful, the
+            method will return the order creating (signed) transaction.
+
+            :param str currencyPair: Return results for a particular market only (default: "all")
+            :param float price: price denoted in ``base``/``quote``
+            :param number amount: Amount of ``quote`` to sell
+
+            Prices/Rates are denoted in 'base', i.e. the USD_BTS market
+            is priced in BTS per USD.
+
+            **Example:** in the USD_BTS market, a price of 300 means
+            a USD is worth 300 BTS
+
+            .. note::
+
+                All prices returned are in the **reversed** orientation as the
+                market. I.e. in the BTC/BTS market, prices are BTS per BTS.
+                That way you can multiply prices with `1.05` to get a +5%.
         """
-        print("Placing Orders:")
-        #: Amount of Funds available for trading (per asset)
-        if "ramp_mode" not in self.settings:
-            mode = "linear"
-        else :
-            mode = self.settings["ramp_mode"]
-        target_price = self.settings["target_price"]
-        only_sell = True if "only_sell" in self.settings and self.settings["only_sell"] else False
-        only_buy = True if "only_buy" in self.settings and self.settings["only_buy"] else False
+        quote, base = market.split(self.config.market_separator)
+        print(" - Selling %f %s for %s @%f %s/%s" % (amount, quote, base, price, base, quote))
+        self.dex.sell(market, price, amount, expiration=self.settings["expiration"])
 
-        balances = self.dex.returnBalances()
-        asset_ids = []
-        amounts = {}
-        for market in self.settings["markets"]:
-            quote, base = market.split(self.config.market_separator)
-            asset_ids.append(base)
-            asset_ids.append(quote)
-        assets_unique = list(set(asset_ids))
-        for a in assets_unique:
-            if a in balances :
-                amounts[a] = balances[a] * self.settings["volume_percentage"] / 100 / asset_ids.count(a)
+    def buy(self, market, price, amount):
+        """ Places a buy order in a given market (buy ``quote``, sell
+            ``base`` in market ``quote_base``). Required POST parameters
+            are "currencyPair", "rate", and "amount". If successful, the
+            method will return the order creating (signed) transaction.
 
-        ticker = self.dex.returnTicker()
-        for m in self.settings["markets"]:
+            :param str currencyPair: Return results for a particular market only (default: "all")
+            :param float price: price denoted in ``base``/``quote``
+            :param number amount: Amount of ``quote`` to buy
 
-            quote, base = m.split(self.config.market_separator)
-            if isinstance(target_price, float) or isinstance(target_price, int):
-                base_price = float(target_price)
-            elif (isinstance(target_price, str) and
-                  target_price is "settlement_price" or
-                  target_price is "feed" or
-                  target_price is "price_feed"):
-                if "settlement_price" in ticker[m] :
-                    base_price = ticker[m]["settlement_price"]
-                else :
-                    raise Exception("Pair %s does not have a settlement price!" % m)
+            Prices/Rates are denoted in 'base', i.e. the USD_BTS market
+            is priced in BTS per USD.
 
-                base_price = base_price * (1 + self.settings["target_price_offset_percentage"] / 100)
+            **Example:** in the USD_BTS market, a price of 300 means
+            a USD is worth 300 BTS
 
-            if quote in amounts and not only_buy:
-                price_start  = base_price * (1 + self.settings["spread_percentage"] / 200.0)
-                price_end    = base_price * (1 + self.settings["ramp_price_percentage"] / 100.0)
-                if not only_sell :
-                    amount       = min([amounts[quote], amounts[base] / (price_start)]) if base in amounts else amounts[quote]
-                else:
-                    amount = amounts[quote]
-                number_orders = math.floor((self.settings["ramp_price_percentage"] / 100.0 - self.settings["spread_percentage"] / 200.0) / (self.settings["ramp_step_percentage"] / 100.0))
-                if mode == "linear" :
-                    for price in linspace(price_start, price_end, number_orders) :
-                        self.sell(m, price, amount / number_orders)
-                elif mode == "exponential" :
-                    k = linspace(1 / number_orders, 1, number_orders)
-                    k = [v / sum(k) for v in k]
-                    order_amounts = [v * amount for v in k]
-                    for i, price in enumerate(linspace(price_start, price_end, number_orders)):
-                        self.sell(m, price, order_amounts[i])
-                else :
-                    raise Exception("ramp_mode '%s' not known" % mode)
+            .. note::
 
-            if base in amounts and not only_sell:
-                price_start  = base_price * (1 - self.settings["spread_percentage"] / 200.0)
-                price_end    = base_price * (1 - self.settings["ramp_price_percentage"] / 100.0)
-                if not only_buy:
-                    amount       = min([amounts[quote], amounts[base] / (price_start)]) if quote in amounts else amounts[base] / (price_start)
-                else:
-                    amount = amounts[base] / price_start
-                number_orders = math.floor((self.settings["ramp_price_percentage"] / 100.0 - self.settings["spread_percentage"] / 200.0) / (self.settings["ramp_step_percentage"] / 100.0))
-                if mode == "linear" :
-                    for price in linspace(price_start, price_end, number_orders) :
-                        self.buy(m, price, amount / number_orders)
-                elif mode == "exponential" :
-                    k = linspace(1 / number_orders, 1, number_orders)
-                    k = [v / sum(k) for v in k]
-                    order_amounts = [v * amount for v in k]
-                    for i, price in enumerate(linspace(price_start, price_end, number_orders)):
-                        self.buy(m, price, order_amounts[i])
-                else :
-                    raise Exception("ramp_mode '%s' not known" % mode)
+                All prices returned are in the **reveresed** orientation as the
+                market. I.e. in the BTC/BTS market, prices are BTS per BTS.
+                That way you can multiply prices with `1.05` to get a +5%.
+        """
+        quote, base = market.split(self.config.market_separator)
+        print(" - Buying %f %s with %s @%f %s/%s" % (amount, quote, base, price, base, quote))
+        self.dex.buy(market, price, amount, expiration=self.settings["expiration"])

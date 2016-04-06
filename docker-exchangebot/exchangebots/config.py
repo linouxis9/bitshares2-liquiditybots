@@ -9,7 +9,7 @@ headers = {
 referrer = "bitshares-munich"
 
 # Interval to run the bot in hours
-interval = 1
+interval = 1.0/60
 
 # Xeroc's bot config
 # Wallet RPC connection details
@@ -64,4 +64,6 @@ bots["MakerRexp"] = {"bot" : MakerRamp,
                      # Serve only on of both sides
                      "only_buy" : False,
                      "only_sell" : False,
+                     # Order expiry time in seconds
+                     "expiration" : 600
                      }
