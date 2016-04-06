@@ -1,10 +1,10 @@
 cli-wallet:
-  build: ./bitshares-2-cli-wallet/
+  image: mauritso/bitshares-2-cli-wallet
   volumes:
     - ./wallet:/wallet
 
 exchange-bot:
-  build: ./docker-exchangebot
+  image: mauritso/docker-exchangebot
   volumes:
     - ./docker-exchangebot:/usr/src/app
   links:
