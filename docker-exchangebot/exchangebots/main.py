@@ -5,11 +5,22 @@ import datetime
 import requests
 from grapheneapi import GrapheneAPI
 from grapheneapi.grapheneapi import RPCError
+from apscheduler.schedulers.background import BlockingScheduler
 
 
 # Load the configuration
 import config
 
+
+def run_bot(bot=bot):
+    print(str(datetime.datetime.now()) + ": Start bot")
+    print(str(datetime.datetime.now()) + ": Cancelling orders")
+    bot.cancel_all()
+    print(str(datetime.datetime.now()) + ": Sleep")
+    time.sleep(12)
+    print(str(datetime.datetime.now()) + ": Running the bot")
+    bot.execute()
+            
 
 def register_account_openledger(account, public_key, referrer=config.referrer, headers=config.headers):
     payload = {
@@ -33,10 +44,10 @@ if __name__ == '__main__':
     # rpc connection
     rpc = GrapheneAPI(config.wallet_host, config.wallet_port, "", "")
     try:
-        rpc.set_password(config.unlock_wallet_password) # try to set password
+        rpc.set_password(config.wallet_password) # try to set password
     except RPCError: # if RCPError the password is already set
         pass
-    rpc.unlock(config.unlock_wallet_password) # unlock the wallet.
+    rpc.unlock(config.wallet_password) # unlock the wallet.
     
     my_accounts = rpc.list_my_accounts()
     
@@ -62,19 +73,12 @@ if __name__ == '__main__':
         print(my_accounts)
         print(config.account)
         print(rpc.list_account_balances(config.account))
-                
+        
         try:
             bot.init(config)
         except Exception as e:
             print(e)
-            
-        print("Start loop")
-        while True:
-            bot.cancel_all()
-            print(str(datetime.datetime.now()) + ": sleep")
-            time.sleep(60)
-            print(str(datetime.datetime.now()) + ": bot.run()")
-            bot.execute()
-            
-        bot.cancel_all()
-
+        
+        scheduler = BlockingScheduler()
+        scheduler.add_job(run_bot, 'interval', hours=config.interval)
+        scheduler.start()

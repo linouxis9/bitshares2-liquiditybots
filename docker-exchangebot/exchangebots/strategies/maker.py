@@ -55,7 +55,7 @@ class MakerSellBuyWalls(BaseStrategy):
             self.settings["symmetric_sides"] = True
 
         # Place orders
-        self.place()
+        # self.place()
 
     def orderFilled(self, oid):
         """ Do nothing, when an order is Filled
@@ -179,11 +179,15 @@ class MakerRamp(BaseStrategy):
             self.settings["ramp_mode"] = "linear"
 
         # Place orders
-        self.place()
+        #self.place()
 
     def orderFilled(self, oid):
-        """ Do nothing, when an order is Filled
-        """
+        #print("Order filled: %s" % oid)
+        # Might be buggy
+        pass
+        
+    def orderPlaced(self, oid):
+        #print("Order succesfully placed: %s" % oid)
         pass
 
     def place(self) :
