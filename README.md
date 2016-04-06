@@ -2,7 +2,7 @@
 
 ## How to use the docker
 
-* Put a cli_wallet password in docker-exchangebot/exchangebot/config.py
+* Put a cli_wallet password in `./docker-exchangebot/exchangebot/config.py`
 * Change account name in the same config file
 * Execute `docker-compose up` in the root directory
 * Send funds to the account
