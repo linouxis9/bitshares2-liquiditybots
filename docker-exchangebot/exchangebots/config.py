@@ -18,8 +18,7 @@ wallet_password       = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelc
 account = "liquidity-bot-xdfx6" # prefix liquidity-bot-
 
 # Websocket URL
-#witness_url           = "wss://bitshares.openledger.info/ws"
-witness_url           = "ws://146.185.144.55:8090"
+witness_url           = "wss://bitshares.openledger.info/ws"
 
 # Set of ALL markets that you inted to serve
 watch_markets         = ["EUR : BTS", "CAD : BTS"]

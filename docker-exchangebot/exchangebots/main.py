@@ -38,7 +38,6 @@ def register_account_faucet(account, public_key, referrer=config.referrer, fauce
                 "referrer": referrer
             }
         }
-    #request = requests.post('http://testnet.bitshares.eu/api/v1/accounts', data=json.dumps(payload), headers=headers)
     request = requests.post(faucet + '/api/v1/accounts', data=json.dumps(payload), headers=headers)
     return (request.status_code == 201, request.text)
 
