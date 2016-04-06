@@ -71,7 +71,7 @@ if __name__ == '__main__':
         else:
             print("Account creation failed")
             print(brain_key)
-            print(faucet + " response: ", account_registration_response)
+            print(config.faucet + " response: ", account_registration_response)
 
     else:
         print(my_accounts)
