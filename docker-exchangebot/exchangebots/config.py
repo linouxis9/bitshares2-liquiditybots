@@ -1,11 +1,11 @@
 # Faucet used for the registration of the bot's account on the blockchain
-faucet="https://bitshares.openledger.info/"
+faucet                = "https://bitshares.openledger.info/"
 
 # Referrer used for the faucet registration
-referrer = "bitshares-munich"
+referrer              = "bitshares-munich"
 
 # Interval to run the bot in hours
-interval = 6
+interval              = 6
 
 # Xeroc's bot config
 # Wallet RPC connection details

@@ -77,7 +77,7 @@ if __name__ == '__main__':
         print(my_accounts)
         print(config.account)
         print(rpc.list_account_balances(config.account))
-
+        print("Bot config: " + str(config.bots["MakerRexp"]))
         try:
             bot.init(config)
         except Exception as e:
