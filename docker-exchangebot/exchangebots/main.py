@@ -22,7 +22,7 @@ def run_bot(bot=bot):
     bot.execute()
 
 
-def register_account_openledger(account, public_key, referrer=config.referrer, faucet=config.faucet):
+def register_account_faucet(account, public_key, referrer=config.referrer, faucet=config.faucet):
     headers = {
 		"Accept": "application/json",
 		"Content-type": "application/json",
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     if len(my_accounts) is 0:
         brain_key = rpc.suggest_brain_key()
-        account_registered, account_registration_response = register_account_openledger(config.account, brain_key['pub_key'])
+        account_registered, account_registration_response = register_account_faucet(config.account, brain_key['pub_key'])
         if account_registered:
             rpc.import_key(config.account, brain_key['wif_priv_key'])
 
