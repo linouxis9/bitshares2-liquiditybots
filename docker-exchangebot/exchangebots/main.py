@@ -19,7 +19,16 @@ def run_bot(bot=bot):
     print(str(datetime.datetime.now()) + ": Sleeping")
     time.sleep(12)
     print(str(datetime.datetime.now()) + ": Running the bot")
-    bot.execute()
+    
+    try:
+        bot.execute()
+    except RPCError as e:
+        if "amount_to_sell.amount > 0" in str(e):
+            print("MANUAL ACTION NEEDED: Can't place order because the amount is too small")
+            print("Getting more of the currency you are selling or buying with should fix this")
+            print(e)
+        else:
+            print(e)
 
 
 def register_account_faucet(account, public_key, referrer=config.referrer, faucet=config.faucet):
@@ -78,11 +87,10 @@ if __name__ == '__main__':
         print(config.account)
         print(rpc.list_account_balances(config.account))
         print("Bot config: " + str(config.bots["MakerRexp"]))
-        try:
-            bot.init(config)
-        except Exception as e:
-            print(e)
-
+        
+        bot.init(config)
+ 
+        run_bot() # running the bot before the scheduler, otherwise it will run for the first time after config.interval
         scheduler = BlockingScheduler()
         scheduler.add_job(run_bot, 'interval', hours=config.interval)
         scheduler.start()
