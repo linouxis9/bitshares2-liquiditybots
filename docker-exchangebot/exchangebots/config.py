@@ -5,7 +5,7 @@ faucet                = "https://bitshares.openledger.info/"
 referrer              = "bitshares-munich"
 
 # Interval to run the bot in hours
-interval              = 6
+interval              = 24
 
 # Xeroc's bot config
 # Wallet RPC connection details
@@ -46,7 +46,7 @@ bots["MakerRexp"] = {"bot" : MakerRamp,
                      # +-percentage offset from target_price
                      "target_price_offset_percentage" : 0,
                      # allowed spread, your lowest orders will be placed here
-                     "spread_percentage" : 8,
+                     "spread_percentage" : 10,
                      # The amount of funds (%) you want to use
                      "volume_percentage" : 50,
                      # Ramp goes up with volume up to a price increase of x%
