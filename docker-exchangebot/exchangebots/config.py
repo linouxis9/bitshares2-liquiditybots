@@ -1,11 +1,7 @@
-# additional config:
-# headers used in the openledger faucet post request
-headers = {
-	"Accept": "application/json",
-	"Content-type": "application/json"
-}
+# Faucet used for the registration of the bot's account on the blockchain
+faucet="https://bitshares.openledger.info/"
 
-# referrer used for openledger registration
+# Referrer used for the faucet registration
 referrer = "bitshares-munich"
 
 # Interval to run the bot in hours
