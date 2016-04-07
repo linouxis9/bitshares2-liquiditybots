@@ -1,21 +1,21 @@
 from __future__ import print_function
+from grapheneapi import GrapheneAPI, GrapheneWebsocketRPC
+from functools import reduce
 import requests
 
-
+in_asset = "BTS" # Needs to have a market with every asset the bot owns.
+rpc = GrapheneWebsocketRPC("wss://bitshares.openledger.info/ws", "", "")
 bots = {
-	'liquidity-bot-mauritso': { # account name
-		"BTS": 8000, # asset : amount of the asset the account was funded with
-		"EUR": 10.65,
-		"CAD": 15.8,
-		"SILVER": 0.802,
-        "spread": 8, # spread % set in bot config.py (for display purposes)
-        "interval": 24, # interval in hours the bot runs at (for display purposes)
-        "volume": 50, # volume % the bot is set to (for display purposes)
+    # account name
+	'liquidity-bot-mauritso': {
+        # spread % set in bot config.py (for display purposes)
+        "spread": 8,
+        # interval in hours the bot runs at (for display purposes)
+        "interval": 24,
+        # volume % the bot is set to (for display purposes)
+        "volume": 50,
 	},
 	'liquidity-bot-mauritso2' : {
-        "BTS": 6000,
-        "EUR": 14.988,
-        "CAD": 22.29,
         "spread": 5,
         "interval": 24,
         "volume": 50,
@@ -23,23 +23,51 @@ bots = {
 }
 
 
-def get_asset_stats(asset, balances):
+def get_symbol_amount(asset_id, amount):
+    asset = rpc.get_assets([asset_id])
+    amount = amount / 10 ** asset[0]['precision']
+    symbol = asset[0]['symbol']
+    return (symbol, amount)
+    
+   
+def get_all_received_transactions(account_name, rpc=rpc):
+    account_history = rpc.getFullAccountHistory(account_name, 1)
+    received = [operation['op'][1] for operation in account_history if operation['op'][0] == 0]
+    return received
+
+
+def get_total_send_to_account(account_name):
+    symbol_amount_dict = {}
+    received_transactions = get_all_received_transactions(account_name)
+    for transaction in received_transactions:
+        symbol_amount = get_symbol_amount(transaction['amount']['asset_id'], transaction['amount']['amount'])
+        symbol_amount_dict[symbol_amount[0]] = symbol_amount[1]
+    return symbol_amount_dict
+    
+
+def get_equivalent_asset(asset, amount, in_asset, price):
+    price_in_asset = None if asset == in_asset else price
+    equivalent_amount = amount if asset == in_asset else amount * price_in_asset
+    return equivalent_amount
+    
+    
+def get_asset_stats(bot, asset, balances):
+    total_received = get_total_send_to_account(bot)
     market_information_request = requests.get("https://cryptofresh.com/api/asset/markets?asset=%s" % asset)
     market_information = market_information_request.json()
     balance = balances['balance']
     orders = balances['orders']
     total = balance + orders
-    price_in_bts = None if asset == "BTS" else market_information['BTS']['price']
-    equivalent_bts = total if asset == "BTS" else total * price_in_bts
-    change_percentage = ((total / bots[bot][asset]) * 100) - 100
+    equivalent_amount = total if asset == in_asset else get_equivalent_asset(asset, total, in_asset, market_information[in_asset]['price'])
+    change_percentage = ((total / total_received[asset]) * 100) - 100
     
     asset_data = {
         'balance': balance,
         'orders': orders,
         'total': total,
-        'equivalent_bts': equivalent_bts,
+        'equivalent_amount': equivalent_amount,
         'change_percentage': change_percentage,
-        'price_in_bts': price_in_bts,
+        'total_received' : total_received[asset],
     }
     
     return asset_data
@@ -50,10 +78,10 @@ def get_bot_data(bot, bots=bots):
     account_request = requests.get("https://cryptofresh.com/api/account/balances?account=%s" % bot)
     account_balances = account_request.json()
     
-    for asset, balances in account_balances.iteritems(): 
-        bot_data[asset] = get_asset_stats(asset, balances)
+    for asset, balances in account_balances.items(): 
+        bot_data[asset] = get_asset_stats(bot, asset, balances)
         
-    equivalent_bts_list = [bot_data[asset]['equivalent_bts'] for asset in bot_data]       
+    equivalent_bts_list = [bot_data[asset]['equivalent_amount'] for asset in bot_data]
     total_equivalent_bts = reduce(lambda a,b: a + b, equivalent_bts_list)
     bot_data['total_equivalent_bts'] = total_equivalent_bts
     
@@ -64,7 +92,7 @@ def print_data(bot_data):
     print("")
     print ("Bot: ", bot.ljust(25), "Settings: %d%% spread running every %d hours with %d%% of the available funds" % (bots[bot]['spread'], bots[bot]['interval'], bots[bot]['volume']))
     
-    for asset, stats in bot_data.iteritems():
+    for asset, stats in bot_data.items():
         if asset == 'total_equivalent_bts':
             continue
         print (
@@ -73,13 +101,13 @@ def print_data(bot_data):
             ("Orders: %.4f" % stats['orders']).ljust(20),
             ("Total: %.4f" % stats['total']).ljust(19),
             ("Change: %.2f%%" % stats['change_percentage']).ljust(15), 
-            "BTS equivalent: %.1f" % stats['equivalent_bts']
+            "%s equivalent: %.1f" % (in_asset, stats['equivalent_amount'])
         )
         
     print("Total equivalent BTS for bot %s: %6.f" % (bot, bot_data['total_equivalent_bts']))
     
-    
 if __name__ == "__main__":
     for bot in bots:
         bot_data = get_bot_data(bot)
-        print_data(bot_data)
+        print_data(bot_data)    
+    print("")
