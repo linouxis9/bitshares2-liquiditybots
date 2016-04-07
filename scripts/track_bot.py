@@ -1,7 +1,7 @@
-from __future__ import print_function
 from grapheneapi import GrapheneAPI, GrapheneWebsocketRPC
 from functools import reduce
 import requests
+
 
 in_asset = "BTS" # Needs to have a market with every asset the bot owns.
 rpc = GrapheneWebsocketRPC("wss://bitshares.openledger.info/ws", "", "")
@@ -19,6 +19,11 @@ bots = {
         "spread": 5,
         "interval": 24,
         "volume": 50,
+    },
+    'liquidity-bot-gold21' : {
+        "spread": 7,
+        "interval": 24,
+        "volume": 50,        
     },
 }
 
@@ -56,7 +61,7 @@ def get_asset_stats(bot, asset, balances):
     market_information_request = requests.get("https://cryptofresh.com/api/asset/markets?asset=%s" % asset)
     market_information = market_information_request.json()
     balance = balances['balance']
-    orders = balances['orders']
+    orders = balances['orders'] if 'orders' in balances else 0
     total = balance + orders
     equivalent_amount = total if asset == in_asset else get_equivalent_asset(asset, total, in_asset, market_information[in_asset]['price'])
     change_percentage = ((total / total_received[asset]) * 100) - 100
@@ -105,6 +110,7 @@ def print_data(bot_data):
         )
         
     print("Total equivalent BTS for bot %s: %6.f" % (bot, bot_data['total_equivalent_bts']))
+    
     
 if __name__ == "__main__":
     for bot in bots:
