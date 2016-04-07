@@ -52,7 +52,7 @@ def register_account_faucet(account, public_key, referrer=config.referrer, fauce
 
 
 if __name__ == '__main__':
-    time.sleep(1) # sleep to give the cli_wallet time to start
+    time.sleep(5) # sleep to give the cli_wallet time to start
 
     # rpc connection
     rpc = GrapheneAPI(config.wallet_host, config.wallet_port, "", "")
