@@ -21,7 +21,7 @@ account = "liquidity-bot-xdfx6" # prefix liquidity-bot-
 witness_url           = "wss://bitshares.openledger.info/ws"
 
 # Set of ALL markets that you inted to serve
-watch_markets         = ["EUR : BTS", "CAD : BTS"]
+watch_markets         = ["EUR : BTS", "CAD : BTS", "SILVER : BTS"]
 market_separator      = " : "  # separator between assets
 
 # If this flag is set to True, nothing will be done really
@@ -40,7 +40,7 @@ bots = {}
 #############################
 bots["MakerRexp"] = {"bot" : MakerRamp,
                      # markets to serve
-                     "markets" : ["EUR : BTS" , "CAD : BTS"],
+                     "markets" : ["EUR : BTS" , "CAD : BTS", "SILVER : BTS"],
                      # target_price to place Ramps around (floating number or "feed")
                      "target_price" : "feed",
                      # +-percentage offset from target_price
