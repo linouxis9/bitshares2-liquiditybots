@@ -25,6 +25,11 @@ bots = {
         "interval": 24,
         "volume": 50,        
     },
+    'liquidity-bot-linouxisbot' : {
+        "spread": 4,
+        "interval": 12,
+        "volume": 50,        
+    },
 }
 
 
