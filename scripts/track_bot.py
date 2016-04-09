@@ -20,7 +20,7 @@ bots = {
         "interval": 24,
         "volume": 50,
     },
-    'liquidity-bot-gold21' : {
+    'liquidity-bot-bm' : {
         "spread": 7,
         "interval": 24,
         "volume": 50,        
