@@ -1,21 +1,22 @@
 from grapheneapi import GrapheneAPI, GrapheneWebsocketRPC
 from functools import reduce
 from grapheneexchange import GrapheneExchange
+import numpy as np
 import json
+import track_bot
+import time
+import graphing
 
 
+dump_to_json = False
 rpc = GrapheneWebsocketRPC("wss://bitshares.openledger.info/ws", "", "")
+bots = [bot for bot in track_bot.bots]
 markets = [
     ("CAD", "BTS"),
     ("EUR", "BTS"),
     ("SILVER", "BTS"),
 ]
-bots = [
-    'liquidity-bot-mauritso',
-    'liquidity-bot-mauritso2',
-    'liquidity-bot-bm',
-    'liquidity-bot-linouxisbot',
-]
+
 
 get_asset_symbol = lambda asset_data: asset_data['symbol']
 get_asset_id = lambda asset_data: asset_data['id']
@@ -93,7 +94,15 @@ if __name__ == "__main__":
         market_volume_data = {}
         asset_data = (rpc.get_asset(market[0]), rpc.get_asset(market[1]))
         order_book = rpc.get_limit_orders(asset_data[0]['id'], asset_data[1]['id'], 50)
-        for percentage in range(0, 10, 1):
+        for percentage in np.arange(0, 11, 1):
             market_volume_data[percentage] = get_volume_at_spread_percentage(order_book, asset_data, bot_ids, percentage)
         volume_data[market] = market_volume_data
-    print_volume_data(volume_data)
+    
+    graphing.graph_market_stats(volume_data, markets[0], './graphing/market_stats_%s' % time.strftime("%Y-%m-%d_%H-%M-%S"))
+    
+    if dump_to_json:
+        with open('./json/market_stats_%s.json' % time.strftime("%Y-%m-%d_%H-%M-%S"), 'w') as outfile:
+            volume_data_json = {}
+            for market in volume_data:
+                volume_data_json[market[0] + " - " + market[1]] = volume_data[market]
+            json.dump(volume_data_json, outfile)

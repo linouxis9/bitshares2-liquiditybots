@@ -1,8 +1,10 @@
 from grapheneapi import GrapheneAPI, GrapheneWebsocketRPC
 from functools import reduce
 import requests
+import json
+import time
 
-
+dump_to_json = False
 in_asset = "BTS" # Needs to have a market with every asset the bot owns.
 rpc = GrapheneWebsocketRPC("wss://bitshares.openledger.info/ws", "", "")
 bots = {
@@ -25,6 +27,16 @@ bots = {
         "interval": 24,
         "volume": 50,        
     },
+    'liquidity-bot-linouxisbot' : {
+        "spread": 4,
+        "interval": 12,
+        "volume": 50,
+    },
+     'liquidity-bot-linouxis2' : {
+        "spread": 1,
+        "interval": 24,
+        "volume": 50,
+    },
 }
 
 
@@ -37,6 +49,7 @@ def get_symbol_amount(asset_id, amount):
    
 def get_all_received_transactions(account_name, rpc=rpc):
     account_history = rpc.getFullAccountHistory(account_name, 1)
+    print(account_history)
     received = [operation['op'][1] for operation in account_history if operation['op'][0] == 0]
     return received
 
@@ -113,7 +126,13 @@ def print_data(bot_data):
     
     
 if __name__ == "__main__":
+    bots_data = {}
     for bot in bots:
         bot_data = get_bot_data(bot)
-        print_data(bot_data)    
+        print_data(bot_data)
+        bots_data[bot] = bot_data        
     print("")
+    
+    if dump_to_json:
+        with open('./json/track_bot_%s.json' % time.strftime("%Y-%m-%d_%H-%M-%S"), 'w') as outfile:
+            json.dump(bots_data, outfile)
