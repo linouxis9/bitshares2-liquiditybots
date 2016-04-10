@@ -49,7 +49,6 @@ def get_symbol_amount(asset_id, amount):
    
 def get_all_received_transactions(account_name, rpc=rpc):
     account_history = rpc.getFullAccountHistory(account_name, 1)
-    print(account_history)
     received = [operation['op'][1] for operation in account_history if operation['op'][0] == 0]
     return received
 
@@ -130,7 +129,8 @@ if __name__ == "__main__":
     for bot in bots:
         bot_data = get_bot_data(bot)
         print_data(bot_data)
-        bots_data[bot] = bot_data        
+        bots_data[bot] = bot_data
+
     print("")
     
     if dump_to_json:
