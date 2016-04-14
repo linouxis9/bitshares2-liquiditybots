@@ -4,6 +4,7 @@ import requests
 import json
 import time
 
+
 dump_to_json = False
 in_asset = "BTS" # Needs to have a market with every asset the bot owns.
 rpc = GrapheneWebsocketRPC("wss://bitshares.openledger.info/ws", "", "")
@@ -11,30 +12,15 @@ bots = {
     # account name
 	'liquidity-bot-mauritso': {
         # spread % set in bot config.py (for display purposes)
-        "spread": 8,
+        "spread": 1,
         # interval in hours the bot runs at (for display purposes)
-        "interval": 24,
+        "interval": 1,
         # volume % the bot is set to (for display purposes)
         "volume": 50,
-	},
-	'liquidity-bot-mauritso2' : {
-        "spread": 5,
-        "interval": 24,
-        "volume": 50,
-    },
-    'liquidity-bot-bm' : {
-        "spread": 7,
-        "interval": 24,
-        "volume": 50,        
-    },
+	},  
     'liquidity-bot-linouxisbot' : {
-        "spread": 4,
-        "interval": 12,
-        "volume": 50,
-    },
-     'liquidity-bot-linouxis2' : {
         "spread": 1,
-        "interval": 24,
+        "interval": 1,
         "volume": 50,
     },
 }
@@ -130,7 +116,6 @@ if __name__ == "__main__":
         bot_data = get_bot_data(bot)
         print_data(bot_data)
         bots_data[bot] = bot_data
-
     print("")
     
     if dump_to_json:

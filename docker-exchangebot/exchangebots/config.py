@@ -5,7 +5,7 @@ faucet                = "https://bitshares.openledger.info/"
 referrer              = "bitshares-munich"
 
 # Interval to run the bot in hours
-interval              = 24
+interval              = 1
 
 # Xeroc's bot config
 # Wallet RPC connection details
@@ -38,24 +38,19 @@ bots = {}
 #############################
 # MakerSellBuyWalls
 #############################
-bots["MakerRexp"] = {"bot" : MakerRamp,
+bots["MakerWall"] = {"bot" : MakerSellBuyWalls,
                      # markets to serve
-                     "markets" : ["EUR : BTS" , "CAD : BTS", "SILVER : BTS"],
+                     "markets" : ["EUR : BTS", "CAD : BTS", "SILVER : BTS"],
                      # target_price to place Ramps around (floating number or "feed")
                      "target_price" : "feed",
                      # +-percentage offset from target_price
                      "target_price_offset_percentage" : 0,
                      # allowed spread, your lowest orders will be placed here
-                     "spread_percentage" : 10,
+                     "spread_percentage" : 2,
                      # The amount of funds (%) you want to use
                      "volume_percentage" : 50,
-                     # Ramp goes up with volume up to a price increase of x%
-                     "ramp_price_percentage" : 16,
-                     # from spread/2 to ramp_price, place an order every x%
-                     "ramp_step_percentage" : 3,
-                     # "linear" ramp (equal amounts) or "exponential"
-                     # (linearily increasing amounts)
-                     "ramp_mode" : "exponential",
+                     # Place symmetric walls on both sides?
+                     "symmetric_sides" : False,
                      # Serve only on of both sides
                      "only_buy" : False,
                      "only_sell" : False,

@@ -6,18 +6,13 @@ import requests
 from grapheneapi import GrapheneAPI
 from grapheneapi.grapheneapi import RPCError
 from apscheduler.schedulers.background import BlockingScheduler
-
-
-# Load the configuration
 import config
 
 
 def run_bot(bot=bot):
-    try:
-        rpc = GrapheneAPI(config.wallet_host, config.wallet_port, "", "")
-        rpc.unlock(config.wallet_password) # unlock the wallet.
-    except Exception as e:
-        print(e)
+    rpc = GrapheneAPI(config.wallet_host, config.wallet_port, "", "")
+    if rpc.is_locked():
+        rpc.unlock(config.wallet_password)
 
     print(str(datetime.datetime.now()) + ": Starting bot...")
     bot.init(config)
@@ -52,26 +47,23 @@ def register_account_faucet(account, public_key, referrer=config.referrer, fauce
                 "memo_key": public_key,
                 "refcode": referrer,
                 "referrer": referrer
-            }
         }
+    }
     request = requests.post(faucet + '/api/v1/accounts', data=json.dumps(payload), headers=headers)
     return (request.status_code == 201, request.text)
 
 
 if __name__ == '__main__':
     time.sleep(5) # sleep to give the cli_wallet time to start
-
-    # rpc connection
     rpc = GrapheneAPI(config.wallet_host, config.wallet_port, "", "")
     try:
         rpc.set_password(config.wallet_password) # try to set password
     except RPCError: # if RCPError the password is already set
         pass
     rpc.unlock(config.wallet_password) # unlock the wallet.
-
     my_accounts = rpc.list_my_accounts()
 
-    if len(my_accounts) is 0:
+    if len(my_accounts) == 0:
         brain_key = rpc.suggest_brain_key()
         account_registered, account_registration_response = register_account_faucet(config.account, brain_key['pub_key'])
         if account_registered:
@@ -88,12 +80,11 @@ if __name__ == '__main__':
             print("Account creation failed")
             print(brain_key)
             print(config.faucet + " response: ", account_registration_response)
-
     else:
         print(my_accounts)
         print(config.account)
         print(rpc.list_account_balances(config.account))
-        print("Bot config: " + str(config.bots["MakerRexp"]))
+        print("Bot config: " + str(config.bots))
         
         run_bot() # running the bot before the scheduler, otherwise it will run for the first time after config.interval
         scheduler = BlockingScheduler()

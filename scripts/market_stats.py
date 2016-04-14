@@ -6,6 +6,7 @@ import json
 import track_bot
 import time
 import graphing
+import collections
 
 
 dump_to_json = False
@@ -48,6 +49,28 @@ def get_volume_at_spread_percentage(order_book, asset_data, bot_ids, percentage)
     
     return (get_total_volume(bids_volume_list), get_total_volume(asks_volume_list), get_total_volume(bots_bids_volume_list), get_total_volume(bots_asks_volume_list))
 
+
+def get_spread_percentages(order_book, asset_data):
+    settlement_price = get_exchange_rate(asset_data[0])
+    bids = [order for order in order_book if order['sell_price']['base']['asset_id'] == '1.3.0']
+    asks = [order for order in order_book if order['sell_price']['quote']['asset_id'] == '1.3.0']
+    
+    for order in bids:
+        bts_amount = order['sell_price']['base']['amount']
+        other_amount = order['sell_price']['quote']['amount']
+        order['price'] = calculate_price(asset_data, bts_amount, other_amount)
+        order['spread'] = (float(order['price'])/settlement_price)*100  - 100
+        order['volume'] = float(order['sell_price']['base']['amount']) / 10 ** 5
+        
+    for order in asks:
+        bts_amount = order['sell_price']['quote']['amount']
+        other_amount = order['sell_price']['base']['amount']
+        order['price'] = calculate_price(asset_data, bts_amount, other_amount)
+        order['spread'] = (float(order['price'])/settlement_price)*100 - 100
+        order['volume'] = float(order['sell_price']['quote']['amount']) / 10 ** 5
+        
+    return(bids, asks)
+
     
 def get_total_volume(volume_list):
     total_volume = reduce(lambda a,b: a + b, volume_list) if len(volume_list) != 0 else 0
@@ -66,6 +89,21 @@ def get_exchange_rate(asset_data, in_asset=False, rpc=rpc):
     quote = bitasset_data[0]['current_feed']['settlement_price']['quote']['amount'] / 10 ** 5 # assuming BTS
     price = base / quote if in_asset else quote / base
     return price
+
+
+def orders_to_graph_data(orders):
+    bot, other  = collections.OrderedDict(), collections.OrderedDict()
+    order_data = collections.OrderedDict()
+    for list_position, order in enumerate(orders):
+        volume_list_bot = [order['volume'] for order in orders[0:list_position+1] if order['seller'] in bot_ids]
+        volume_list_other = [order['volume'] for order in orders[0:list_position+1]]
+        if order['seller'] in bot_ids:
+            bot[order['spread']] = reduce(lambda a,b: a + b, volume_list_bot, 0)
+        other[order['spread']] = reduce(lambda a,b: a + b, volume_list_other, 0)
+        bot_total = reduce(lambda a,b: a + b, [bot[e] for e in bot], 0)
+        other_total = reduce(lambda a,b: a + b, [other[e] for e in other], 0)
+        order_data[order['spread']] = (other_total, bot_total)
+    return order_data    
     
     
 def print_volume_data(volume_data):
@@ -89,17 +127,19 @@ if __name__ == "__main__":
     for bot in bots:
         bot_ids.append(rpc.get_account(bot)['id'])
 
-    volume_data = {}
     for market in markets:
-        market_volume_data = {}
         asset_data = (rpc.get_asset(market[0]), rpc.get_asset(market[1]))
-        order_book = rpc.get_limit_orders(asset_data[0]['id'], asset_data[1]['id'], 50)
-        for percentage in np.arange(0, 11, 1):
-            market_volume_data[percentage] = get_volume_at_spread_percentage(order_book, asset_data, bot_ids, percentage)
-        volume_data[market] = market_volume_data
-    
-    graphing.graph_market_stats(volume_data, markets[0], './graphing/market_stats_%s' % time.strftime("%Y-%m-%d_%H-%M-%S"))
-    
+        order_book = rpc.get_limit_orders(asset_data[0]['id'], asset_data[1]['id'], 150)
+        bids, asks = get_spread_percentages(order_book, asset_data)
+        bids_s = sorted(bids, key=lambda k: k['spread'], reverse=True)
+        asks_s = sorted(asks, key=lambda k: k['spread'])
+        
+        graph_data = {}
+        graph_data['bids'] = orders_to_graph_data(bids_s)
+        graph_data['asks'] = orders_to_graph_data(asks_s)
+        graphing.graph_market_stats_v2(graph_data, market, './graphing/market_graph_%s_%s_%s' % (market[0], market[1], time.strftime("%Y-%m-%d_%H-%M-%S")))
+
+
     if dump_to_json:
         with open('./json/market_stats_%s.json' % time.strftime("%Y-%m-%d_%H-%M-%S"), 'w') as outfile:
             volume_data_json = {}
