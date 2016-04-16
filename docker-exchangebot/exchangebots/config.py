@@ -30,30 +30,20 @@ safe_mode             = False
 # The Bots:
 
 # Load the strategies
-from strategies.maker import MakerRamp, MakerSellBuyWalls
+from strategies.maker import LiquiditySellBuyWalls
 
 # Each bot has its individual name and carries the strategy and settings
 bots = {}
 
-#############################
-# MakerSellBuyWalls
-#############################
-bots["MakerWall"] = {"bot" : MakerSellBuyWalls,
-                     # markets to serve
+bots["LiquidityWall"] = {"bot" : LiquiditySellBuyWalls,
                      "markets" : ["EUR : BTS", "CAD : BTS", "SILVER : BTS"],
-                     # target_price to place Ramps around (floating number or "feed")
                      "target_price" : "feed",
-                     # +-percentage offset from target_price
                      "target_price_offset_percentage" : 0,
-                     # allowed spread, your lowest orders will be placed here
-                     "spread_percentage" : 2,
-                     # The amount of funds (%) you want to use
-                     "volume_percentage" : 50,
-                     # Place symmetric walls on both sides?
+                     "spread_percentage" : 4,
+                     "allowed_spread_percentage" : 2,
+                     "volume_percentage" : 40,
                      "symmetric_sides" : False,
-                     # Serve only on of both sides
                      "only_buy" : False,
                      "only_sell" : False,
-                     # Order expiry time in seconds
-                     "expiration" : 2*60*60*interval # expiry time is 2 times the interval the bot runs at.
+                     "expiration" : 60 * 60 * 6
                      }

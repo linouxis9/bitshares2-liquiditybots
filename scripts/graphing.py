@@ -33,7 +33,7 @@ def graph_market_stats_v2(order_data, trading_pair, path):
     plt.xticks(range(-5,6))
     plt.grid()
     plt.ylabel('Liquidiy (BTS)')
-    plt.xlabel('<- Bids | Spread percentage (%) | Asks ->')
+    plt.xlabel('◀ Bids | Spread percentage (%) | Asks ▶')
     plt.title('%s:%s orders at spread percentage' % (trading_pair[0], trading_pair[1]))
     leg = plt.legend((p1[0], p2[0]), ('Bot orders', 'All orders'))
     

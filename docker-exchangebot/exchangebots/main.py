@@ -23,7 +23,7 @@ def run_bot(bot=bot):
     print(str(datetime.datetime.now()) + ": Running the bot")
     
     try:
-        bot.execute()
+        bot.run()
     except RPCError as e:
         if "amount_to_sell.amount > 0" in str(e):
             print("MANUAL ACTION NEEDED: Can't place order because the amount is too small")
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         if account_registered:
             rpc.import_key(config.account, brain_key['wif_priv_key'])
 
-            print("Account: %s succesfully registered" % config.account)
+            print("Account: %s successfully registered" % config.account)
             print(rpc.list_my_accounts())
 
             print("Brain key: %s" % brain_key['brain_priv_key'])
@@ -87,6 +87,7 @@ if __name__ == '__main__':
         print("Bot config: " + str(config.bots))
         
         run_bot() # running the bot before the scheduler, otherwise it will run for the first time after config.interval
-        scheduler = BlockingScheduler()
-        scheduler.add_job(run_bot, 'interval', hours=config.interval)
-        scheduler.start()
+        #scheduler = BlockingScheduler()
+        #scheduler.add_job(run_bot, 'interval', hours=config.interval)
+        #scheduler.start()
+
