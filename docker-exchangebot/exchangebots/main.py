@@ -16,10 +16,7 @@ def run_bot(bot=bot):
 
     print(str(datetime.datetime.now()) + ": Starting bot...")
     bot.init(config)
-    print(str(datetime.datetime.now()) + ": Cancelling orders...")
-    bot.cancel_all()
-    print(str(datetime.datetime.now()) + ": Sleeping")
-    time.sleep(12)
+
     print(str(datetime.datetime.now()) + ": Running the bot")
     
     try:

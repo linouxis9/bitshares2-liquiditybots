@@ -12,10 +12,10 @@ interval              = 1
 wallet_host           = "cli-wallet"
 wallet_port           = 8092
 wallet_user           = ""
-wallet_password       = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectly"
+wallet_password       = "password"
 
 # Your account that executes the trades
-account = "liquidity-bot-xdfx6" # prefix liquidity-bot-
+account = "liquidity-bot-mauritso" # prefix liquidity-bot-
 
 # Websocket URL
 witness_url           = "wss://bitshares.openledger.info/ws"
@@ -24,13 +24,20 @@ witness_url           = "wss://bitshares.openledger.info/ws"
 watch_markets         = ["EUR : BTS", "CAD : BTS", "SILVER : BTS"]
 market_separator      = " : "  # separator between assets
 
+# Minimum amount of currency to place order
+minimum_amounts = {
+"EUR": 0.20,
+"CAD": 0.30,
+"SILVER": 0.02,
+}
 # If this flag is set to True, nothing will be done really
 safe_mode             = False
 
-# The Bots:
+
+
 
 # Load the strategies
-from strategies.maker import LiquiditySellBuyWalls
+from strategies.liquidity_wall import LiquiditySellBuyWalls
 
 # Each bot has its individual name and carries the strategy and settings
 bots = {}
@@ -41,9 +48,10 @@ bots["LiquidityWall"] = {"bot" : LiquiditySellBuyWalls,
                      "target_price_offset_percentage" : 0,
                      "spread_percentage" : 4,
                      "allowed_spread_percentage" : 2,
-                     "volume_percentage" : 40,
+                     "volume_percentage" : 50,
                      "symmetric_sides" : False,
                      "only_buy" : False,
                      "only_sell" : False,
-                     "expiration" : 60 * 60 * 6
+                     "expiration" : 60 * 60 * 3,
+                     "skip_blocks" : 20,
                      }
