@@ -2,6 +2,9 @@ from .basestrategy import BaseStrategy, MissingSettingsException
 import math
 from numpy import linspace
 from datetime import datetime
+import time
+from grapheneapi.grapheneapi import RPCError
+from grapheneapi import GrapheneAPI
 
 
 class LiquiditySellBuyWalls(BaseStrategy):
@@ -75,20 +78,37 @@ class LiquiditySellBuyWalls(BaseStrategy):
         self.place()
         # Execute one tick()
         self.tick()
-
-    def orderFilled(self, oid):
-        print("%s | Order %s filled." % (datetime.now(), oid))
-        replace_orders = []
-        order = self.dex.ws.get_objects([oid])[0]
-        base_asset, quote_asset = self._get_assets_from_ids(order['sell_price']['base']['asset_id'], order['sell_price']['quote']['asset_id'])
-
-        for market in self.settings["markets"]:
-            quote, base = single_market.split(self.config.market_separator)
-            if quote == quote_asset["symbol"] and base == base_asset["symbol"] or quote == base_asset["symbol"] and base == quote_asset["symbol"]:
-                replace_orders.append(market)
         
-        for market in replace_orders:
-            self.replace(market)
+    def loadMarket(self, notify=True):
+        """ Load the markets and compare the stored orders with the
+            still open orders. Calls ``orderFilled(orderid)`` for orders no
+            longer open (i.e. fully filled)
+        """
+                
+
+        #: Load Open Orders for the markets and store them for later
+        try:
+            self.opened_orders = self.dex.returnOpenOrdersIds()
+        except RPCError:
+            self.dex.rpc = GrapheneAPI(self.dex.wallet_host, self.dex.wallet_port, self.dex.wallet_user, self.dex.wallet_password)
+            self.opened_orders = self.dex.returnOpenOrdersIds()
+
+        #: Have orders been matched?
+        old_orders = self.getState()["orders"]
+        cur_orders = self.dex.returnOpenOrdersIds()
+        for market in self.settings["markets"] :
+            if market in old_orders:
+                for orderid in old_orders[market] :
+                    if orderid not in cur_orders[market] :
+                        # Remove it from the state
+                        self.state["orders"][market].remove(orderid)
+                        # Execute orderFilled call
+                        if notify :
+                            self.orderFilled(orderid, market)
+                            
+    def orderFilled(self, oid, market):
+        print("%s | Order %s filled." % (datetime.now(), oid))
+        self.replace(market)
 
     def tick(self):
         self.block_counter += 1
@@ -100,7 +120,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                 if m in curOrders:
                     for o in curOrders[m]:
                         order_feed_spread = math.fabs((o["rate"] - ticker[m]["settlement_price"]) / ticker[m]["settlement_price"] * 100)
-                        #print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
+                        print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
                         if order_feed_spread <= self.settings["allowed_spread_percentage"] / 2 or order_feed_spread >= (self.settings["allowed_spread_percentage"] + self.settings["spread_percentage"]) / 2:
                             self.replace(m)
                 
@@ -164,6 +184,8 @@ class LiquiditySellBuyWalls(BaseStrategy):
                     thisAmount = amounts[base] / buy_price
                     if thisAmount >= self.config.minimum_amounts[quote]:
                         self.buy(m, buy_price, thisAmount)
+        print("sleep")
+        time.sleep(5)
                     
     def replace(self, market) :
         """ (re)place orders for specific market.
@@ -230,3 +252,5 @@ class LiquiditySellBuyWalls(BaseStrategy):
                 thisAmount = amounts[base] / buy_price
                 if thisAmount >= self.config.minimum_amounts[quote]:
                     self.buy(m, buy_price, thisAmount)
+        print("sleep")
+        time.sleep(5)

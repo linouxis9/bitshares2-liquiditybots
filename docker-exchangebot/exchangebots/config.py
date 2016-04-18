@@ -12,7 +12,7 @@ interval              = 1
 wallet_host           = "cli-wallet"
 wallet_port           = 8092
 wallet_user           = ""
-wallet_password       = "password"
+wallet_password       = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectlyevenbetterer"
 
 # Your account that executes the trades
 account = "liquidity-bot-mauritso" # prefix liquidity-bot-
