@@ -16,19 +16,9 @@ def run_bot(bot=bot):
 
     print(str(datetime.datetime.now()) + ": Starting bot...")
     bot.init(config)
-
+    time.sleep(6)
     print(str(datetime.datetime.now()) + ": Running the bot")
-    
-    try:
-        bot.run()
-    except RPCError as e:
-        if "amount_to_sell.amount > 0" in str(e):
-            print("MANUAL ACTION NEEDED: Can't place order because the amount is too small")
-            print("Getting more of the currency you are selling or buying with should fix this")
-            print(e)
-        else:
-            print(e)
-
+    bot.run()
 
 def register_account_faucet(account, public_key, referrer=config.referrer, faucet=config.faucet):
     headers = {

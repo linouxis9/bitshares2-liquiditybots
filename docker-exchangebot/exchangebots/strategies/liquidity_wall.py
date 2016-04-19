@@ -1,10 +1,7 @@
 from .basestrategy import BaseStrategy, MissingSettingsException
 import math
-from numpy import linspace
 from datetime import datetime
-import time
-from grapheneapi.grapheneapi import RPCError
-from grapheneapi import GrapheneAPI
+
 
 
 class LiquiditySellBuyWalls(BaseStrategy):
@@ -73,25 +70,20 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
         if "skip_blocks" not in self.settings:
             self.settings["skip_blocks"] = 20
-        
-        self.cancel_all()
-        self.place()
-        # Execute one tick()
-        self.tick()
+
+        self.order_filled_ignore = []
+
+        for market in self.settings["markets"]:
+            self.replace(market)
+
         
     def loadMarket(self, notify=True):
         """ Load the markets and compare the stored orders with the
             still open orders. Calls ``orderFilled(orderid)`` for orders no
             longer open (i.e. fully filled)
         """
-                
 
-        #: Load Open Orders for the markets and store them for later
-        try:
-            self.opened_orders = self.dex.returnOpenOrdersIds()
-        except RPCError:
-            self.dex.rpc = GrapheneAPI(self.dex.wallet_host, self.dex.wallet_port, self.dex.wallet_user, self.dex.wallet_password)
-            self.opened_orders = self.dex.returnOpenOrdersIds()
+        self.opened_orders = self.dex.returnOpenOrdersIds()
 
         #: Have orders been matched?
         old_orders = self.getState()["orders"]
@@ -107,8 +99,12 @@ class LiquiditySellBuyWalls(BaseStrategy):
                             self.orderFilled(orderid, market)
                             
     def orderFilled(self, oid, market):
-        print("%s | Order %s filled." % (datetime.now(), oid))
-        self.replace(market)
+        if not market in self.order_filled_ignore:
+            print("%s | Order %s filled | Ignore list %s" % (datetime.now(), oid, str(self.order_filled_ignore)))
+            self.replace(market)
+        else:
+            print("%s | Order %s cancelled/ignored | Ignore list %s" % (datetime.now(), oid, str(self.order_filled_ignore)))
+            self.order_filled_ignore.remove(market)
 
     def tick(self):
         self.block_counter += 1
@@ -184,8 +180,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                     thisAmount = amounts[base] / buy_price
                     if thisAmount >= self.config.minimum_amounts[quote]:
                         self.buy(m, buy_price, thisAmount)
-        print("sleep")
-        time.sleep(5)
+
                     
     def replace(self, market) :
         """ (re)place orders for specific market.
@@ -197,9 +192,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
             try :
                 print("Cancelling %s" % o["orderNumber"])
                 self.dex.cancel(o["orderNumber"])
+                self.order_filled_ignore.append(m)
             except:
                 print("An error has occured when trying to cancel order %s!" % o)
-                
+        #self.order_filled_ignore = list(set(self.order_filled_ignore))
+
         target_price = self.settings["target_price"]
         only_sell = True if "only_sell" in self.settings and self.settings["only_sell"] else False
         only_buy = True if "only_buy" in self.settings and self.settings["only_buy"] else False
@@ -252,5 +249,3 @@ class LiquiditySellBuyWalls(BaseStrategy):
                 thisAmount = amounts[base] / buy_price
                 if thisAmount >= self.config.minimum_amounts[quote]:
                     self.buy(m, buy_price, thisAmount)
-        print("sleep")
-        time.sleep(5)

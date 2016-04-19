@@ -1,4 +1,4 @@
-FROM bitshares/bitshares-2
+FROM bitshares/bitshares-2:2.0.160406
 MAINTAINER Fabian Schuh <Fabian@cryptonomex.com>
 
 ## Copying default configuration

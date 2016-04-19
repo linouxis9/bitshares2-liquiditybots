@@ -30,6 +30,14 @@ minimum_amounts = {
 "CAD": 0.30,
 "SILVER": 0.02,
 }
+
+borrow_percentages = {
+    "EUR": 20,
+    "CAD": 20,
+    "SILVER": 20,
+    "BTS": 40,
+}
+
 # If this flag is set to True, nothing will be done really
 safe_mode             = False
 

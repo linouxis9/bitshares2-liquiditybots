@@ -1,5 +1,5 @@
 cli-wallet:
-  image: mauritso/bitshares-2-cli-wallet
+  image: cli-wallet
   volumes:
     - ./wallet:/wallet
 
