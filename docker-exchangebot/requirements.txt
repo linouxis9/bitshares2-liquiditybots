@@ -6,4 +6,3 @@ scrypt
 ecdsa
 websocket-client
 graphenelib
-apscheduler
