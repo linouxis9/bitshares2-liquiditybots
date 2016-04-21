@@ -76,7 +76,6 @@ class AutomaticBorrow(BaseStrategy):
     def tick(self):
         self.block_counter += 1
         if (self.block_counter % self.settings["skip_blocks"]) == 0:
-            print("%s | Amount of blocks since bot has been started: %d" % (datetime.now(), self.block_counter))
 
             debt_positions = self.dex.list_debt_positions()
             quote_amounts = self.calculate_quote_amounts(debt_positions)

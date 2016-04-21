@@ -32,10 +32,10 @@ minimum_amounts = {
 }
 
 borrow_percentages = {
-    "EUR": 20,
-    "CAD": 20,
-    "SILVER": 20,
-    "BTS": 40,
+    "EUR": 12,
+    "CAD": 12,
+    "SILVER": 12,
+    "BTS": 64,
 }
 
 # If this flag is set to True, nothing will be done really
@@ -62,4 +62,6 @@ bots["LiquidityWall"] = {"bot" : LiquiditySellBuyWalls,
                      "only_sell" : False,
                      "expiration" : 60 * 60 * 3,
                      "skip_blocks" : 20,
+                     "ratio" : 2.5,
+                     "minimum_change_percentage" : 10,
                      }
