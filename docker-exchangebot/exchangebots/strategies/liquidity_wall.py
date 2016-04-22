@@ -163,6 +163,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                             
     def orderFilled(self, oid, market):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))
+        self.cancel_orders(market)
         self.place_orders_market(market)
 
     def orderPlaced(self, oid):
@@ -285,10 +286,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
             quote_amounts[quote] = quote_amount
         return quote_amounts
 
-    def get_total_bts(self, debt_positions, calculation_type=self.settings['calculate_bts_total']):
+    def get_total_bts(self, debt_positions, calculation_type=None):
         if not debt_positions:
             debt_positions = self.dex.list_debt_positions()
-
+        if not calculation_type:
+            calculation_type = self.settings['calculate_bts_total']
         total_collateral = sum([value['collateral'] for key, value in debt_positions.items() if value['collateral_asset'] == "BTS"])
         balances = self.dex.returnBalances()
         open_orders = self.dex.returnOpenOrders()
