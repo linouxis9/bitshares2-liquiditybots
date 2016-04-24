@@ -116,10 +116,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
         """ Check if there is at least 1 order for each market, placing orders for that market if that's not the case
         """
+        self.cancel_orders()
         open_orders = self.dex.returnOpenOrders()
         for market in self.settings["markets"]:
             if len(open_orders[market]) == 0:
-                self.place_orders_market(market)
+                self.place_orders(market)
 
         # Execute 1 tick before the websocket is activated
         self.tick()
@@ -177,6 +178,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
             #: Amount of Funds available for trading (per asset)
             balances = self.dex.returnBalances()
+            print(balances)
             asset_ids = []
             amounts = {}
             for single_market in self.settings["markets"] :
@@ -208,20 +210,22 @@ class LiquiditySellBuyWalls(BaseStrategy):
             if quote in amounts and not only_buy:
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_sell:
                     thisAmount = min([amounts[quote], amounts[base] / buy_price]) if base in amounts else amounts[quote]
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.sell(market, sell_price, thisAmount)
                 else :
                     thisAmount = amounts[quote]
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.sell(market, sell_price, thisAmount)
+                        print(thisAmount, self.settings['minimum_amounts'][quote], market)
             if base in amounts and not only_sell:
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_buy:
                     thisAmount = min([amounts[quote], amounts[base] / buy_price]) if quote in amounts else amounts[base] / buy_price
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.buy(market, buy_price, thisAmount)
                 else :
                     thisAmount = amounts[base] / buy_price
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
+                        print(thisAmount, self.settings['minimum_amounts'][quote], market)
                         self.buy(market, buy_price, thisAmount)
         else:
             for market in self.settings["markets"]:
@@ -282,7 +286,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
         quote_amounts = {}
         for m in self.settings["markets"]:
             quote, base = m.split(self.config.market_separator)
-            quote_amount = (total_bts * (self.config.borrow_percentages[quote] / 100)) / ticker[m]['settlement_price']
+            quote_amount = (total_bts * (self.settings['borrow_percentages'][quote] / 100)) / ticker[m]['settlement_price']
             quote_amounts[quote] = quote_amount
         return quote_amounts
 
