@@ -126,20 +126,20 @@ class LiquiditySellBuyWalls(BaseStrategy):
             open_orders = self.dex.returnOpenOrders()
             for market in self.settings["markets"]:
                 if market in open_orders:
+                    if len(open_orders[market]) == 0:
+                        self.place_orders(market)
                     if len(open_orders[market]) == 1:
                         if open_orders[market][0]['type'] == "sell":
-                            self.place_orders(market, only_buy=True)
+                            self.place_orders(market=market, only_buy=True)
                         elif open_orders[market][0]['type'] == "buy":
-                            self.place_orders(market, only_sell=True)
+                            self.place_orders(market=market, only_sell=True)
                     for o in open_orders[market]:
                         order_feed_spread = math.fabs((o["rate"] - ticker[market]["settlement_price"]) / ticker[market]["settlement_price"] * 100)
                         print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
                         if order_feed_spread <= self.settings["allowed_spread_percentage"] / 2 or order_feed_spread >= (self.settings["allowed_spread_percentage"] + self.settings["spread_percentage"]) / 2:
                             self.cancel_orders(market)
                             self.update_debt_positions()
-                            self.place_orders_market(market)
-                else:
-                    self.place_orders(market)
+                            self.place_orders_market(market=market)
 
     def orderFilled(self, oid):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))
@@ -182,20 +182,20 @@ class LiquiditySellBuyWalls(BaseStrategy):
             if quote in amounts and not only_buy:
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_sell:
                     thisAmount = min([amounts[quote], amounts[base] / buy_price]) if base in amounts else amounts[quote]
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.sell(market, sell_price, thisAmount)
                 else :
                     thisAmount = amounts[quote]
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.sell(market, sell_price, thisAmount)
             if base in amounts and not only_sell:
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_buy:
                     thisAmount = min([amounts[quote], amounts[base] / buy_price]) if quote in amounts else amounts[base] / buy_price
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.buy(market, buy_price, thisAmount)
                 else:
                     thisAmount = amounts[base] / buy_price
-                    if thisAmount >= self.config.minimum_amounts[quote]:
+                    if thisAmount >= self.settings['minimum_amounts'][quote]:
                         self.buy(market, buy_price, thisAmount)
         else:
             for market in self.settings["markets"]:

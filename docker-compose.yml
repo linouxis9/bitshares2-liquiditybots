@@ -5,7 +5,7 @@ cli-wallet:
     - ./cli-wallet-start.sh:/start.sh
 
 exchange-bot:
-  image: exchangebot
+  image: mauritso/docker-exchangebot
   volumes:
     - ./docker-exchangebot:/usr/src/app
   links:
