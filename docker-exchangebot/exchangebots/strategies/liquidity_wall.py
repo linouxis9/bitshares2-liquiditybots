@@ -1,6 +1,7 @@
-from .basestrategy import BaseStrategy, MissingSettingsException
 import math
 from datetime import datetime
+
+from .basestrategy import BaseStrategy, MissingSettingsException
 
 
 class LiquiditySellBuyWalls(BaseStrategy):
@@ -114,13 +115,6 @@ class LiquiditySellBuyWalls(BaseStrategy):
         if len(debt_positions) == 0:
             self.place_initial_debt_positions(debt_positions)
 
-        """ Check if there is at least 1 order for each market, placing orders for that market if that's not the case
-        """
-        open_orders = self.dex.returnOpenOrders()
-        for market in self.settings["markets"]:
-            if len(open_orders[market]) == 0:
-                self.place_orders_market(market)
-
         # Execute 1 tick before the websocket is activated
         self.tick()
 
@@ -132,6 +126,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
             open_orders = self.dex.returnOpenOrders()
             for market in self.settings["markets"]:
                 if market in open_orders:
+                    if len(open_orders[market]) == 1:
+                        if open_orders[market][0]['type'] == "sell":
+                            self.place_orders(market, only_buy=True)
+                        elif open_orders[market][0]['type'] == "buy":
+                            self.place_orders(market, only_sell=True)
                     for o in open_orders[market]:
                         order_feed_spread = math.fabs((o["rate"] - ticker[market]["settlement_price"]) / ticker[market]["settlement_price"] * 100)
                         print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
@@ -139,43 +138,18 @@ class LiquiditySellBuyWalls(BaseStrategy):
                             self.cancel_orders(market)
                             self.update_debt_positions()
                             self.place_orders_market(market)
+                else:
+                    self.place_orders(market)
 
-    def loadMarket(self, notify=True):
-        """ Load the markets and compare the stored orders with the
-            still open orders. Calls ``orderFilled(order_id)`` for orders no
-            longer open (i.e. fully filled)
-        """
-
-        self.opened_orders = self.dex.returnOpenOrdersIds()
-
-        #: Have orders been matched?
-        old_orders = self.getState()["orders"]
-        cur_orders = self.dex.returnOpenOrdersIds()
-        for market in self.settings["markets"] :
-            if market in old_orders:
-                for order_id in old_orders[market] :
-                    if order_id not in cur_orders[market] :
-                        # Remove it from the state
-                        self.state["orders"][market].remove(order_id)
-                        # Execute orderFilled call
-                        if notify :
-                            self.orderFilled(order_id, market)
-                            
-    def orderFilled(self, oid, market):
+    def orderFilled(self, oid):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))
-        self.cancel_orders(market)
-        self.place_orders_market(market)
 
     def orderPlaced(self, oid):
         print("%s | Order %s placed." % (datetime.now(), oid))
 
-    def place_orders(self, market='all'):
+    def place_orders(self, market='all', only_sell=False, only_buy=False):
         if market != "all":
             target_price = self.settings["target_price"]
-            only_sell = True if "only_sell" in self.settings and self.settings["only_sell"] else False
-            only_buy = True if "only_buy" in self.settings and self.settings["only_buy"] else False
-
-            #: Amount of Funds available for trading (per asset)
             balances = self.dex.returnBalances()
             asset_ids = []
             amounts = {}
@@ -219,7 +193,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                     thisAmount = min([amounts[quote], amounts[base] / buy_price]) if quote in amounts else amounts[base] / buy_price
                     if thisAmount >= self.config.minimum_amounts[quote]:
                         self.buy(market, buy_price, thisAmount)
-                else :
+                else:
                     thisAmount = amounts[base] / buy_price
                     if thisAmount >= self.config.minimum_amounts[quote]:
                         self.buy(market, buy_price, thisAmount)
@@ -236,7 +210,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
             for order in open_orders[market]:
                 try:
                     print("Cancelling %s" % order["orderNumber"])
-                    self.dex.cancel_orders(order["orderNumber"])
+                    self.dex.cancel(order["orderNumber"])
                 except:
                     print("An error has occured when trying to cancel order %s!" % order)
         else:
