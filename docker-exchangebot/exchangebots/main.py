@@ -5,7 +5,6 @@ import datetime
 import requests
 from grapheneapi import GrapheneAPI
 from grapheneapi.grapheneapi import RPCError
-from apscheduler.schedulers.background import BlockingScheduler
 import config
 
 
