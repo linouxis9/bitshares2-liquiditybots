@@ -33,11 +33,12 @@ safe_mode = False
 
 # Load the strategies
 from strategies.liquidity_wall import LiquiditySellBuyWalls
-
+from strategies.maintain_collateral_ratio import MaintainCollateralRatio
 # Each bot has its individual name and carries the strategy and settings
 bots = {}
 
 bots["LiquidityWall"] = {
+    "symmetric_sides" : False,
     "bot": LiquiditySellBuyWalls,
     "markets": [
         "EUR : BTS",
@@ -66,4 +67,13 @@ bots["LiquidityWall"] = {
     "minimum_change_percentage": 10,
     # Total bts calculation, only bts or the total worth of the account in bts ("bts" or "worth")
     "calculate_bts_total": "bts",
+}
+
+bots["Collateral"] = {
+    "bot" : MaintainCollateralRatio,
+    "markets" : ["EUR : BTS", "SILVER : BTS", "CAD : BTS"],
+    "target_ratio" : 2.5,
+    "lower_threshold" : 2.3,
+    "upper_threshold" : 2.7,
+    "skip_blocks" : 1,
 }

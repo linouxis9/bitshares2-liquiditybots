@@ -127,7 +127,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
             for market in self.settings["markets"]:
                 if market in open_orders:
                     if len(open_orders[market]) == 0:
-                        self.place_orders(market)
+                        self.place_orders(market=market)
                     if len(open_orders[market]) == 1:
                         if open_orders[market][0]['type'] == "sell":
                             self.place_orders(market=market, only_buy=True)
@@ -138,8 +138,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                         print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
                         if order_feed_spread <= self.settings["allowed_spread_percentage"] / 2 or order_feed_spread >= (self.settings["allowed_spread_percentage"] + self.settings["spread_percentage"]) / 2:
                             self.cancel_orders(market)
-                            self.update_debt_positions()
-                            self.place_orders_market(market=market)
+                            self.place_orders(market=market)
 
     def orderFilled(self, oid):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))
@@ -256,7 +255,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
         quote_amounts = {}
         for m in self.settings["markets"]:
             quote, base = m.split(self.config.market_separator)
-            quote_amount = (total_bts * (self.config.borrow_percentages[quote] / 100)) / ticker[m]['settlement_price']
+            quote_amount = (total_bts * (self.settings['borrow_percentages'][quote] / 100)) / ticker[m]['settlement_price']
             quote_amounts[quote] = quote_amount
         return quote_amounts
 
