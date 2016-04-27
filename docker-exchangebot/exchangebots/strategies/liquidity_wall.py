@@ -124,6 +124,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
             print("%s | Amount of blocks since bot has been started: %d" % (datetime.now(), self.block_counter))
             ticker = self.dex.returnTicker()
             open_orders = self.dex.returnOpenOrders()
+            debt_positions = self.dex.list_debt_positions()
             for market in self.settings["markets"]:
                 if market in open_orders:
                     if len(open_orders[market]) == 0:
@@ -138,8 +139,15 @@ class LiquiditySellBuyWalls(BaseStrategy):
                         print("%s | Order: %s is %.3f%% away from feed" % (datetime.now(), o['orderNumber'], order_feed_spread))
                         if order_feed_spread <= self.settings["allowed_spread_percentage"] / 2 or order_feed_spread >= (self.settings["allowed_spread_percentage"] + self.settings["spread_percentage"]) / 2:
                             self.cancel_orders(market)
-                            self.update_debt_positions()
+                            # self.update_debt_positions()
                             self.place_orders_market(market=market)
+                if market not in debt_positions:
+                    debt_amounts = self.get_debt_amounts(debt_positions)
+                    symbol, base = market.split(self.dex.market_separator)
+                    amount = debt_amounts[symbol]
+                    print("%s | Placing debt position for %s of %4.f" % (datetime.now(), symbol, amount))
+                    self.dex.borrow(amount, symbol, self.settings["ratio"])
+
 
     def orderFilled(self, oid):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))
