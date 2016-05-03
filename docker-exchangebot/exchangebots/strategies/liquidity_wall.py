@@ -235,24 +235,6 @@ class LiquiditySellBuyWalls(BaseStrategy):
             print("%s | Placing debt position for %s of %4.f" % (datetime.now(), symbol, amount))
             self.dex.borrow(amount, symbol, self.settings["ratio"])
 
-    def update_debt_positions(self):
-        debt_amounts = self.get_debt_amounts()
-        if len(self.debt_positions) == 0:
-            self.place_initial_debt_positions()
-        elif len(self.debt_positions) == 3:
-            for symbol, amount in debt_amounts.items():
-                change_percentage = math.fabs((amount/self.debt_positions[symbol]['debt']) - 1) * 100
-                print("%s | Calculated amount: %.4f | Current amount: %.4f | Change: %.2f " % (datetime.now(), amount, self.debt_positions[symbol]['debt'], change_percentage))
-                if change_percentage >= self.settings["minimum_change_percentage"]:
-                    delta_amount = amount - self.debt_positions[symbol]['debt']
-                    self.adjust_debt_amount(delta_amount, symbol)
-        else:
-            print("%s | Something is wrong, %d amount of debt positions " % (datetime.now(), len(self.debt_positions)))
-
-    def adjust_debt_amount(self, delta_amount, symbol):
-        print("%s | Adjusting position for %s by %4.f" % (datetime.now(), symbol, delta_amount))
-        self.dex.adjust_debt(delta_amount, symbol, self.settings["ratio"])
-
     def get_debt_amounts(self,):
         total_bts = self.get_total_bts(self.debt_positions)
         quote_amounts = {}
@@ -261,20 +243,3 @@ class LiquiditySellBuyWalls(BaseStrategy):
             quote_amount = (total_bts * (self.settings['borrow_percentages'][quote] / 100)) / self.ticker[m]['settlement_price']
             quote_amounts[quote] = quote_amount
         return quote_amounts
-
-    def get_total_bts(self, calculation_type=None):
-        if not calculation_type:
-            calculation_type = self.settings['calculate_bts_total']
-        total_collateral = sum([value['collateral'] for key, value in self.debt_positions.items() if value['collateral_asset'] == "BTS"])
-        order_list = []
-        for market in self.open_orders:
-            order_list.extend(self.open_orders[market])
-        bts_on_orderbook = sum([order['total'] for order in order_list if order['type'] == 'buy'])
-        total_bts = total_collateral + self.balances["BTS"] + bts_on_orderbook
-
-        if calculation_type == "worth":
-        #    ticker = self.dex.returnTicker()
-        #    market_postfix = self.config.market_separator + "BTS"
-        #    bitasset_balances_worth = sum([balances[asset] * ticker[asset + market_postfix]["settlement_price"] for asset in balances if asset != "BTS"])
-            total_bts = total_bts
-        return total_bts
