@@ -5,7 +5,6 @@ import datetime
 import requests
 from grapheneapi import GrapheneAPI
 from grapheneapi.grapheneapi import RPCError
-from apscheduler.schedulers.background import BlockingScheduler
 import config
 
 
@@ -16,22 +15,9 @@ def run_bot(bot=bot):
 
     print(str(datetime.datetime.now()) + ": Starting bot...")
     bot.init(config)
-    print(str(datetime.datetime.now()) + ": Cancelling orders...")
-    bot.cancel_all()
-    print(str(datetime.datetime.now()) + ": Sleeping")
-    time.sleep(12)
+    time.sleep(6)
     print(str(datetime.datetime.now()) + ": Running the bot")
-    
-    try:
-        bot.execute()
-    except RPCError as e:
-        if "amount_to_sell.amount > 0" in str(e):
-            print("MANUAL ACTION NEEDED: Can't place order because the amount is too small")
-            print("Getting more of the currency you are selling or buying with should fix this")
-            print(e)
-        else:
-            print(e)
-
+    bot.run()
 
 def register_account_faucet(account, public_key, referrer=config.referrer, faucet=config.faucet):
     headers = {
@@ -69,7 +55,7 @@ if __name__ == '__main__':
         if account_registered:
             rpc.import_key(config.account, brain_key['wif_priv_key'])
 
-            print("Account: %s succesfully registered" % config.account)
+            print("Account: %s successfully registered" % config.account)
             print(rpc.list_my_accounts())
 
             print("Brain key: %s" % brain_key['brain_priv_key'])
@@ -87,6 +73,7 @@ if __name__ == '__main__':
         print("Bot config: " + str(config.bots))
         
         run_bot() # running the bot before the scheduler, otherwise it will run for the first time after config.interval
-        scheduler = BlockingScheduler()
-        scheduler.add_job(run_bot, 'interval', hours=config.interval)
-        scheduler.start()
+        #scheduler = BlockingScheduler()
+        #scheduler.add_job(run_bot, 'interval', hours=config.interval)
+        #scheduler.start()
+

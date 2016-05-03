@@ -98,7 +98,7 @@ def execute():
         print("Executing bot %s" % name)
         bots[name].loadMarket()
         bots[name].init()
-        bots[name].place()
+        bots[name].place_orders()
         bots[name].store()
 
 

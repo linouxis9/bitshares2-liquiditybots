@@ -1,59 +1,79 @@
 # Faucet used for the registration of the bot's account on the blockchain
-faucet                = "https://bitshares.openledger.info/"
+faucet = "https://bitshares.openledger.info/"
 
 # Referrer used for the faucet registration
-referrer              = "bitshares-munich"
+referrer = "bitshares-munich"
 
-# Interval to run the bot in hours
-interval              = 1
 
 # Xeroc's bot config
 # Wallet RPC connection details
-wallet_host           = "cli-wallet"
-wallet_port           = 8092
-wallet_user           = ""
-wallet_password       = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectly"
+wallet_host = "cli-wallet"
+wallet_port = 8092
+wallet_user = ""
+wallet_password = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectlyevenbetterer"
 
 # Your account that executes the trades
-account = "liquidity-bot-xdfx6" # prefix liquidity-bot-
+account = "liquidity-bot-mauritso"  # prefix liquidity-bot-
 
 # Websocket URL
-witness_url           = "wss://bitshares.openledger.info/ws"
+witness_url = "wss://bitshares.openledger.info/ws"
 
 # Set of ALL markets that you inted to serve
-watch_markets         = ["EUR : BTS", "CAD : BTS", "SILVER : BTS"]
-market_separator      = " : "  # separator between assets
+watch_markets = [
+    "EUR : BTS",
+    "CAD : BTS",
+    "SILVER : BTS"
+]
+market_separator = " : "  # separator between assets
+
 
 # If this flag is set to True, nothing will be done really
-safe_mode             = False
+safe_mode = False
 
-# The Bots:
 
 # Load the strategies
-from strategies.maker import MakerRamp, MakerSellBuyWalls
-
+from strategies.liquidity_wall import LiquiditySellBuyWalls
+from strategies.maintain_collateral_ratio import MaintainCollateralRatio
 # Each bot has its individual name and carries the strategy and settings
 bots = {}
 
-#############################
-# MakerSellBuyWalls
-#############################
-bots["MakerWall"] = {"bot" : MakerSellBuyWalls,
-                     # markets to serve
-                     "markets" : ["EUR : BTS", "CAD : BTS", "SILVER : BTS"],
-                     # target_price to place Ramps around (floating number or "feed")
-                     "target_price" : "feed",
-                     # +-percentage offset from target_price
-                     "target_price_offset_percentage" : 0,
-                     # allowed spread, your lowest orders will be placed here
-                     "spread_percentage" : 2,
-                     # The amount of funds (%) you want to use
-                     "volume_percentage" : 50,
-                     # Place symmetric walls on both sides?
-                     "symmetric_sides" : False,
-                     # Serve only on of both sides
-                     "only_buy" : False,
-                     "only_sell" : False,
-                     # Order expiry time in seconds
-                     "expiration" : 2*60*60*interval # expiry time is 2 times the interval the bot runs at.
-                     }
+bots["LiquidityWall"] = {
+    "symmetric_sides" : False,
+    "bot": LiquiditySellBuyWalls,
+    "markets": [
+        "EUR : BTS",
+        "CAD : BTS",
+        "SILVER : BTS"
+    ],
+    "borrow_percentages": {
+        "EUR": 12,
+        "CAD": 2,
+        "SILVER": 12,
+        "BTS": 74
+    },
+    "minimum_amounts": {
+        "EUR": 0.20,
+        "CAD": 0.30,
+        "SILVER": 0.02,
+    },
+    "target_price": "feed",
+    "target_price_offset_percentage": 0,
+    "spread_percentage": 2,
+    "allowed_spread_percentage": 1,
+    "volume_percentage": 70,
+    "expiration": 60 * 60 * 3,
+    "skip_blocks": 5,
+    "ratio": 2.5,
+    "minimum_change_percentage": 10,
+    # Total bts calculation, only bts or the total worth of the account in bts ("bts" or "worth")
+    "calculate_bts_total": "bts",
+}
+
+bots["Collateral"] = {
+    "bot" : MaintainCollateralRatio,
+    "markets" : ["EUR : BTS", "SILVER : BTS", "CAD : BTS"],
+    "target_ratio" : 2.5,
+    "lower_threshold" : 2.3,
+    "upper_threshold" : 2.7,
+    "skip_blocks" : 1,
+}

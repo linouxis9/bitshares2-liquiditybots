@@ -1,9 +1,8 @@
 numpy
-autobahn
+autobahn==0.13.0
 requests
 pycrypto
 scrypt
 ecdsa
 websocket-client
 graphenelib
-apscheduler
