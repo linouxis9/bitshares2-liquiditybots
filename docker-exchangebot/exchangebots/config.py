@@ -47,9 +47,9 @@ bots["LiquidityWall"] = {
     ],
     "borrow_percentages": {
         "EUR": 12,
-        "CAD": 12,
+        "CAD": 2,
         "SILVER": 12,
-        "BTS": 64
+        "BTS": 74
     },
     "minimum_amounts": {
         "EUR": 0.20,
@@ -58,11 +58,11 @@ bots["LiquidityWall"] = {
     },
     "target_price": "feed",
     "target_price_offset_percentage": 0,
-    "spread_percentage": 4,
-    "allowed_spread_percentage": 2,
-    "volume_percentage": 50,
+    "spread_percentage": 2,
+    "allowed_spread_percentage": 1,
+    "volume_percentage": 70,
     "expiration": 60 * 60 * 3,
-    "skip_blocks": 20,
+    "skip_blocks": 5,
     "ratio": 2.5,
     "minimum_change_percentage": 10,
     # Total bts calculation, only bts or the total worth of the account in bts ("bts" or "worth")
