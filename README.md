@@ -1,5 +1,10 @@
 # bitshares2-liquiditybots
 
+
+This docker-compose file runs a cli-wallet container and a bot that uses cli-wallet to connect with graphene.
+cli-wallet connects to the openledger full node and the bot does as well. To switch to your own full node (you should if you are running a bot),
+change "witness_url" in `./docker-exchangebot/exchangebot/config.py` and the -s option in `cli-wallet-start.sh`
+
 ## How to run this
 
 * Put a cli_wallet password in `./docker-exchangebot/exchangebot/config.py`
@@ -7,9 +12,5 @@
 * Tweak config.py further to your liking.
 * Execute `docker-compose up` in the root directory
 * Send funds to the account
-* Restart docker-compose. (ctrl+c and docker-compose up)
-* To start docker-compose in the background use `docker-compose start` and check the output with `docker-compose logs`
-
-## Todo
-
-* (see commits to find scripts) Find out a way to monitor performance of the bots (the bot itself so it doesn't lose money and the market to see the effect the bots have on the market). cli_wallet market_history()?
+* Restart docker-compose. (ctrl+c and docker-compose start)
+* Check the output with `docker-compose logs`
