@@ -8,17 +8,14 @@ class LiquiditySellBuyWalls(BaseStrategy):
     """ Puts up buy/sell walls at a specific spread in the market, replacing orders as the price changes.
 
         **Settings**:
-
+        
+        * **borrow**: Borrow bitassets? (Boolean)
         * **borrow_percentages**: how to divide the bts for lending bitAssets
         * **minimum_amounts**: the minimum amount an order has to be
         * **target_price**: target_price to place walls around (floating number or "feed")
-        * **target_price_offset_percentage**: +-percentage offset from target_price
         * **spread_percentage**: Another "offset". Allows a spread. The lowest orders will be placed here
         * **allowed_spread_percentage**: The allowed spread an order may have before it gets replaced
         * **volume_percentage**: The amount of funds (%) you want to use
-        * **symmetric_sides**: (boolean) Place symmetric walls on both sides?
-        * **only_buy**: Serve only on of both sides 
-        * **only_sell**: Serve only on of both sides 
         * **expiration**: expiration time in seconds of buy/sell orders.
         * **ratio**: The desired collateral ratio (same as maintain_collateral_ratio.py)
 
@@ -30,16 +27,14 @@ class LiquiditySellBuyWalls(BaseStrategy):
             from strategies.maker import LiquiditySellBuyWalls
             bots["LiquidityWall"] = {"bot" : LiquiditySellBuyWalls,
                                  "markets" : ["USD : BTS"],
+                                 "borrow" : True,
                                  "borrow_percentages" : ["USD" : 30, "BTS" : 70]
                                  "minimum_amounts" : ["USD" : 0.2]
                                  "target_price" : "feed",
-                                 "target_price_offset_percentage" : 5,
                                  "spread_percentage" : 5,
                                  "allowed_spread_percentage" : 2.5,
                                  "volume_percentage" : 10,
                                  "symmetric_sides" : True,
-                                 "only_buy" : False,
-                                 "only_sell" : False,
                                  "expiration" : 60 * 60 * 6
                                  "ratio" : 2.5,
                                  }
@@ -71,7 +66,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
             self.settings["symmetric_sides"] = True
 
         if "expiration" not in self.settings:
-            self.settings["expiration"] = 60*60*24
+            self.settings["expiration"] = 60*60*2
 
         if "skip_blocks" not in self.settings:
             self.settings["skip_blocks"] = 20
@@ -110,8 +105,9 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
         """ Check if there are no existing debt positions, creating the initial positions if none exist
         """
-        if len(self.debt_positions) == 0:
-            self.place_initial_debt_positions()
+        if self.settings['borrow']:
+            if len(self.debt_positions) == 0:
+                self.place_initial_debt_positions()
 
         # Execute 1 tick before the websocket is activated
         self.tick()
@@ -120,7 +116,8 @@ class LiquiditySellBuyWalls(BaseStrategy):
         self.ticker = self.dex.returnTicker()
         self.open_orders = self.dex.returnOpenOrders()
         self.debt_positions = self.dex.list_debt_positions()
-        self.balances = self.dex.returnBalances()
+        if self.settings['borrow']:
+            self.balances = self.dex.returnBalances()
 
     def tick(self):
         self.block_counter += 1
@@ -146,13 +143,14 @@ class LiquiditySellBuyWalls(BaseStrategy):
                     self.cancel_orders(market)
                     self.place_orders(market)
                     return True
-        symbol, base = market.split(self.dex.market_separator)
-        if symbol not in self.debt_positions:
-            debt_amounts = self.get_debt_amounts()
-            amount = debt_amounts[symbol]
-            print("%s | Placing debt position for %s of %4.f" % (datetime.now(), symbol, amount))
-            self.dex.borrow(amount, symbol, self.settings["ratio"])
-        return False
+        if self.settings['borrow']:
+            symbol, base = market.split(self.dex.market_separator)
+            if symbol not in self.debt_positions:
+                debt_amounts = self.get_debt_amounts()
+                amount = debt_amounts[symbol]
+                print("%s | Placing debt position for %s of %4.f" % (datetime.now(), symbol, amount))
+                self.dex.borrow(amount, symbol, self.settings["ratio"])
+            return False
 
     def orderFilled(self, oid):
         print("%s | Order %s filled or cancelled" % (datetime.now(), oid))

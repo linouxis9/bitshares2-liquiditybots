@@ -10,10 +10,10 @@ referrer = "bitshares-munich"
 wallet_host = "cli-wallet"
 wallet_port = 8092
 wallet_user = ""
-wallet_password = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectlyevenbetterer"
+wallet_password = "put in a password"
 
 # Your account that executes the trades
-account = "liquidity-bot-mauritso"  # prefix liquidity-bot-
+account = "liquidity-bot-"  # prefix liquidity-bot-
 
 # Websocket URL
 witness_url = "wss://bitshares.openledger.info/ws"
@@ -38,37 +38,44 @@ from strategies.maintain_collateral_ratio import MaintainCollateralRatio
 bots = {}
 
 bots["LiquidityWall"] = {
-    "symmetric_sides" : False,
     "bot": LiquiditySellBuyWalls,
     "markets": [
         "EUR : BTS",
         "CAD : BTS",
         "SILVER : BTS"
     ],
+    # Automatically borrow bitassets?
+    "borrow": True,
+    # How the BTS is divided for the debts. 12% means 12% of the bts is used to lend EUR.
     "borrow_percentages": {
         "EUR": 12,
-        "CAD": 2,
+        "CAD": 12,
         "SILVER": 12,
-        "BTS": 74
+        "BTS": 64
     },
+    # Minimum amount an order has to be to get placed
     "minimum_amounts": {
         "EUR": 0.20,
         "CAD": 0.30,
         "SILVER": 0.02,
     },
     "target_price": "feed",
-    "target_price_offset_percentage": 0,
+    # the percentage the order will be placed at in relation to target_price
     "spread_percentage": 2,
+    # the percentage the order may drift from spread_percentage.
     "allowed_spread_percentage": 1,
+    # the percentage of the available funds to put on the market
     "volume_percentage": 70,
+    # expiration time for the orders placed by the bot in seconds
     "expiration": 60 * 60 * 3,
+    # the bot runs every skip_blocks blocks (every 5 blocks means every 5*3=15 seconds)
     "skip_blocks": 5,
+    # collateral ratio for the debts placed by the bot (same as target_ratio below)
     "ratio": 2.5,
-    "minimum_change_percentage": 10,
-    # Total bts calculation, only bts or the total worth of the account in bts ("bts" or "worth")
-    "calculate_bts_total": "bts",
 }
 
+
+# Turn this bot off if you don't borrow bitassets on the bot.
 bots["Collateral"] = {
     "bot" : MaintainCollateralRatio,
     "markets" : ["EUR : BTS", "SILVER : BTS", "CAD : BTS"],
