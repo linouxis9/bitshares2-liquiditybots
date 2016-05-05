@@ -80,9 +80,6 @@ class LiquiditySellBuyWalls(BaseStrategy):
         if "minimum_amounts" not in self.settings:
             raise MissingSettingsException("minimum_amounts")
 
-        if "minimum_change_percentage" not in self.settings:
-            raise MissingSettingsException("minimum_change_percentage")
-
         """ Verify that the markets are against the assets
         """
         for market in self.settings["markets"]:
@@ -116,8 +113,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
         self.ticker = self.dex.returnTicker()
         self.open_orders = self.dex.returnOpenOrders()
         self.debt_positions = self.dex.list_debt_positions()
-        if self.settings['borrow']:
-            self.balances = self.dex.returnBalances()
+        self.balances = self.dex.returnBalances()
 
     def tick(self):
         self.block_counter += 1
@@ -234,10 +230,19 @@ class LiquiditySellBuyWalls(BaseStrategy):
             self.dex.borrow(amount, symbol, self.settings["ratio"])
 
     def get_debt_amounts(self,):
-        total_bts = self.get_total_bts(self.debt_positions)
+        total_bts = self.get_total_bts()
         quote_amounts = {}
         for m in self.settings["markets"]:
             quote, base = m.split(self.config.market_separator)
             quote_amount = (total_bts * (self.settings['borrow_percentages'][quote] / 100)) / self.ticker[m]['settlement_price']
             quote_amounts[quote] = quote_amount
         return quote_amounts
+
+    def get_total_bts(self):
+        total_collateral = sum([value['collateral'] for key, value in self.debt_positions.items() if value['collateral_asset'] == "BTS"])
+        order_list = []
+        for market in self.open_orders:
+            order_list.extend(self.open_orders[market])
+        bts_on_orderbook = sum([order['total'] for order in order_list if order['type'] == 'buy'])
+        total_bts = total_collateral + self.balances["BTS"] + bts_on_orderbook
+        return total_bts
