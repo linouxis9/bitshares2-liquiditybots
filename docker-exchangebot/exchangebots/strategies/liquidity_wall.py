@@ -16,11 +16,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
         * **spread_percentage**: Another "offset". Allows a spread. The lowest orders will be placed here
         * **allowed_spread_percentage**: The allowed spread an order may have before it gets replaced
         * **volume_percentage**: The amount of funds (%) you want to use
-        * **expiration**: expiration time in seconds of buy/sell orders.
+        * **expiration**: Expiration time of the order in seconds
         * **ratio**: The desired collateral ratio (same as maintain_collateral_ratio.py)
 
 
-        * **skip_blocks**: Checks the collateral ratio only every x blocks
+        * **skip_blocks**: Runs the bot logic only every x blocks
 
         .. code-block:: python
 
@@ -37,6 +37,7 @@ class LiquiditySellBuyWalls(BaseStrategy):
                                  "symmetric_sides" : True,
                                  "expiration" : 60 * 60 * 6
                                  "ratio" : 2.5,
+                                 "skip_blocks" : 3,
                                  }
 
 
@@ -79,6 +80,9 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
         if "minimum_amounts" not in self.settings:
             raise MissingSettingsException("minimum_amounts")
+
+        if "expiration" not in self.settings:
+            self.settings["expiration"] = 60*60*24*7
 
         """ Verify that the markets are against the assets
         """
@@ -187,20 +191,20 @@ class LiquiditySellBuyWalls(BaseStrategy):
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_sell:
                     amount = min([amounts[quote], amounts[base] / buy_price]) if base in amounts else amounts[quote]
                     if amount >= self.settings['minimum_amounts'][quote]:
-                        self.sell(market, sell_price, amount)
+                        self.sell(market, sell_price, amount, self.settings["expiration"])
                 else :
                     amount = amounts[quote]
                     if amount >= self.settings['minimum_amounts'][quote]:
-                        self.sell(market, sell_price, amount)
+                        self.sell(market, sell_price, amount, self.settings["expiration"])
             if base in amounts and not only_sell:
                 if "symmetric_sides" in self.settings and self.settings["symmetric_sides"] and not only_buy:
                     amount = min([amounts[quote], amounts[base] / buy_price]) if quote in amounts else amounts[base] / buy_price
                     if amount >= self.settings['minimum_amounts'][quote]:
-                        self.buy(market, buy_price, amount)
+                        self.buy(market, buy_price, amount, self.settings["expiration"])
                 else:
                     amount = amounts[base] / buy_price
                     if amount >= self.settings['minimum_amounts'][quote]:
-                        self.buy(market, buy_price, amount)
+                        self.buy(market, buy_price, amount, self.settings["expiration"])
         else:
             for market in self.settings["markets"]:
                 self.place_orders(market)

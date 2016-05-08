@@ -1,8 +1,8 @@
 import bot
 import json
 import time
-import datetime
 import requests
+from datetime import datetime
 from grapheneapi import GrapheneAPI
 from grapheneapi.grapheneapi import RPCError
 import config
@@ -13,10 +13,10 @@ def run_bot(bot=bot):
     if rpc.is_locked():
         rpc.unlock(config.wallet_password)
 
-    print(str(datetime.datetime.now()) + ": Starting bot...")
+    print(str(datetime.now()) + "| Starting bot...")
     bot.init(config)
     time.sleep(6)
-    print(str(datetime.datetime.now()) + ": Running the bot")
+    print(str(datetime.now()) + "| Running the bot")
     bot.run()
 
 def register_account_faucet(account, public_key, referrer=config.referrer, faucet=config.faucet):
@@ -67,13 +67,13 @@ if __name__ == '__main__':
             print(brain_key)
             print(config.faucet + " response: ", account_registration_response)
     else:
-        print(my_accounts)
-        print(config.account)
-        print(rpc.list_account_balances(config.account))
-        print("Bot config: " + str(config.bots))
-        
-        run_bot() # running the bot before the scheduler, otherwise it will run for the first time after config.interval
-        #scheduler = BlockingScheduler()
-        #scheduler.add_job(run_bot, 'interval', hours=config.interval)
-        #scheduler.start()
+        account_balances = rpc.list_account_balances(config.account)
+        bot_configs = {}
+        for bot_config in config.bots:
+            bot_configs[bot_config] = {key:config.bots[bot_config][key] for key in config.bots[bot_config] if key != 'bot'}
 
+        print("%s | Account name: %s" % (datetime.now(), config.account))
+        print("%s | Account balances: %s" % (datetime.now(), json.dumps(account_balances, indent=4, sort_keys=True)))
+        print("%s | Bot config: %s" % (datetime.now(), json.dumps(bot_configs, indent=4, sort_keys=True)))
+        
+        run_bot()
