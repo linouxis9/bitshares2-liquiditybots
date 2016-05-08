@@ -7,6 +7,8 @@ change "witness_url" in `./docker-exchangebot/exchangebot/config.py` and the -s 
 
 ## How to run this
 
+You will find the full instructions at https://github.com/linouxis9/bitshares2-liquiditybots/releases
+
 * Put a cli_wallet password in `./docker-exchangebot/exchangebot/config.py`
 * Change account name in the same config file
 * Tweak config.py further to your liking.
