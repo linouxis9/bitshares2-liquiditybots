@@ -13,7 +13,7 @@ wallet_user = ""
 wallet_password = "put in a password"
 
 # Your account that executes the trades
-account = "liquidity-bot-mauritso4"  # prefix liquidity-bot-
+account = "liquidity-bot-"  # prefix liquidity-bot-
 
 # Websocket URL
 witness_url = "wss://bitshares.openledger.info/ws"
