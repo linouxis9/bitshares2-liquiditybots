@@ -65,6 +65,7 @@ bots["LiquidityWall"] = {
     # the percentage the order may drift from spread_percentage.
     "allowed_spread_percentage": 1,
     # the percentage of the available funds to put on the market
+    "symmetric_sides": False,
     "volume_percentage": 70,
     # expiration time for the orders placed by the bot in seconds
     "expiration": 60 * 60 * 3,
