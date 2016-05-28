@@ -1,6 +1,6 @@
 import math
 from datetime import datetime
-
+import time
 from .basestrategy import BaseStrategy, MissingSettingsException
 
 
@@ -118,14 +118,20 @@ class LiquiditySellBuyWalls(BaseStrategy):
         self.open_orders = self.dex.returnOpenOrders()
         self.debt_positions = self.dex.list_debt_positions()
         self.balances = self.dex.returnBalances()
+        self.filled_orders = self.get_filled_orders()
 
     def tick(self):
         self.block_counter += 1
         if (self.block_counter % self.settings["skip_blocks"]) == 0:
             print("%s | Amount of blocks since bot has been started: %d" % (datetime.now(), self.block_counter))
             self.update_data()
-            for market in self.settings["markets"]:
-                self.check_and_replace(market)
+            print("bid ask SILVER : BTS", self.price_bid_ask("SILVER : BTS"))
+            print("feed SILVER : BTS", self.price_feed("SILVER : BTS"))
+            print("filled SILVER : BTS", self.price_filled_orders("SILVER : BTS"))
+            print("last SILVER : BTS", self.price_last("SILVER : BTS"))
+            print("avg weighted SILVER : BTS", self.get_price("SILVER : BTS"))
+            #for market in self.settings["markets"]:
+                #self.check_and_replace(market)
 
     def check_and_replace(self, market):
         if market in self.open_orders:
@@ -160,7 +166,6 @@ class LiquiditySellBuyWalls(BaseStrategy):
 
     def place_orders(self, market='all', only_sell=False, only_buy=False):
         if market != "all":
-            target_price = self.settings["target_price"]
             balances = self.dex.returnBalances()
             asset_ids = []
             amounts = {}
@@ -172,16 +177,11 @@ class LiquiditySellBuyWalls(BaseStrategy):
             for a in assets_unique:
                 if a in balances:
                     amounts[a] = balances[a] * self.settings["volume_percentage"] / 100 / asset_ids.count(a)
-            if isinstance(target_price, float) or isinstance(target_price, int):
-                base_price = float(target_price) * (1 + self.settings["target_price_offset_percentage"] / 100)
-            elif (isinstance(target_price, str) and
-                  target_price is "settlement_price" or
-                  target_price is "feed" or
-                  target_price is "price_feed"):
-                if "settlement_price" in self.ticker[market]:
-                    base_price = self.ticker[market]["settlement_price"] * (1 + self.settings["target_price_offset_percentage"] / 100)
-                else:
-                    raise Exception("Pair %s does not have a settlement price!" % market)
+
+            base_price = self.get_price(market)
+            if not base_price:
+                print("%s | No price for %s" % (datetime.now(), market))
+                return
 
             buy_price = base_price * (1.0 - self.settings["spread_percentage"] / 200)
             sell_price = base_price * (1.0 + self.settings["spread_percentage"] / 200)
@@ -250,3 +250,92 @@ class LiquiditySellBuyWalls(BaseStrategy):
         bts_on_orderbook = sum([order['total'] for order in order_list if order['type'] == 'buy'])
         total_bts = total_collateral + self.balances["BTS"] + bts_on_orderbook
         return total_bts
+
+    def formatTimeFromNow(self, secs=0):
+        """ Properly Format Time that is `x` seconds in the future
+            :param int secs: Seconds to go in the future (`x>0`) or the
+                             past (`x<0`)
+            :return: Properly formated time for Graphene (`%Y-%m-%dT%H:%M:%S`)
+            :rtype: str
+        """
+        return datetime.utcfromtimestamp(time.time() + int(secs)).strftime('%Y-%m-%dT%H:%M:%S')
+
+    def get_filled_orders(self):
+        filled_orders_markets = {}
+        for market in self.settings["markets"]:
+            quote_symbol, base_symbol = market.split(self.config.market_separator)
+            base_id = self.dex.rpc.get_asset(base_symbol)['id']
+            quote_id = self.dex.rpc.get_asset(quote_symbol)['id']
+            m = {"base": base_id, "quote": quote_id}
+            filled_orders = self.dex.ws.get_fill_order_history(quote_id, base_id, 1000, api="history")
+            price_list = []
+            for order in filled_orders:
+                timestamp = datetime.strptime(order['time'], "%Y-%m-%dT%H:%M:%S")
+                seconds_ago = (datetime.now() - timestamp).total_seconds()
+                op = order['op']
+                if seconds_ago <= self.settings["filled_order_age"]:
+                    price_data = {
+                        "price": self.dex._get_price_filled(order, m),
+                        "seconds_ago": (datetime.now() - timestamp).total_seconds(),
+                        "volume": op['pays']['amount'] if op['pays']['asset_id'] == quote_id else op['receives']['amount']
+                    }
+                    price_list.append(price_data)
+            filled_orders_markets[market] = price_list
+        return filled_orders_markets
+
+    def price_filled_orders(self, market):
+        price_list = self.filled_orders[market]
+        price_weight_total = sum([order['volume'] * (1 / (self.settings["time_weight_factor"] * order['seconds_ago'])) * order['price'] for order in price_list])
+        weight_total = sum([order['volume'] * (1 / (self.settings["time_weight_factor"] * order['seconds_ago'])) for order in price_list])
+        volume_total = sum([order['volume'] for order in price_list])
+        try:
+            price = (price_weight_total / weight_total)
+        except ZeroDivisionError:
+            return None
+        else:
+            if volume_total >= self.settings["minimum_volume"]:
+                return price
+            else:
+                return None
+
+    def price_feed(self, market):
+        if "settlement_price" in self.ticker[market]:
+            return(self.ticker[market]["settlement_price"] * (1 + self.settings["target_price_offset_percentage"] / 100))
+        else:
+            raise Exception("Pair %s does not have a settlement price!" % market)
+
+    def price_target(self, market):
+        return float(self.settings['target_price']) * (1 + self.settings["target_price_offset_percentage"] / 100)
+
+    def price_bid_ask(self, market):
+        return (self.ticker[market]['highestBid'] + self.ticker[market]['lowestAsk']) / 2
+
+    def price_last(self, market):
+        return self.ticker[market]['last']
+
+    def get_price(self, market, target_price=None):
+        if not target_price:
+            target_price = self.settings['target_price']
+        if isinstance(target_price, float) or isinstance(target_price, int):
+            return self.price_target
+        elif (isinstance(target_price, str) and
+            target_price is "settlement_price" or
+            target_price is "feed" or
+            target_price is "price_feed"):
+            return self.price_feed(market)
+        elif (isinstance(target_price, str) and
+            target_price is "filled_orders"):
+            return self.price_filled_orders(market)
+        elif (isinstance(target_price, str) and
+            target_price is "bid_ask" or
+            target_price is "gap"):
+            return self.price_bid_ask(market)
+        elif (isinstance(target_price, str) and
+            target_price is "last"):
+            return self.price_last(market)
+
+        if isinstance(target_price, dict):
+            price_weight_sum = sum([self.get_price(market, target_price=target) * weight for target, weight in target_price.items() if self.get_price(market, target_price=target) > 0])
+            weight_sum = sum([weight for target, weight in target_price.items() if self.get_price(market, target_price=target) > 0])
+            return price_weight_sum / weight_sum
+

@@ -10,10 +10,10 @@ referrer = "bitshares-munich"
 wallet_host = "cli-wallet"
 wallet_port = 8092
 wallet_user = ""
-wallet_password = "put in a password"
+wallet_password = "reallyhardpasswordbecuasemultipleenglishwordbutnotspelcorrectlyevenbetterer"
 
 # Your account that executes the trades
-account = "liquidity-bot-"  # prefix liquidity-bot-
+account = "liquidity-bot-mauritso"  # prefix liquidity-bot-
 
 # Websocket URL
 witness_url = "wss://bitshares.openledger.info/ws"
@@ -59,13 +59,17 @@ bots["LiquidityWall"] = {
         "CAD": 0.30,
         "SILVER": 0.02,
     },
-    "target_price": "feed",
+    "target_price": {
+        "filled_orders": 2,
+        "last": 1,
+        "feed": 0,
+        "gap" : 0.1,
+        },
     # the percentage the order will be placed at in relation to target_price
     "spread_percentage": 2,
     # the percentage the order may drift from spread_percentage.
     "allowed_spread_percentage": 1,
     # the percentage of the available funds to put on the market
-    "symmetric_sides": False,
     "volume_percentage": 70,
     # expiration time for the orders placed by the bot in seconds
     "expiration": 60 * 60 * 3,
@@ -73,15 +77,23 @@ bots["LiquidityWall"] = {
     "skip_blocks": 5,
     # collateral ratio for the debts placed by the bot (same as target_ratio below)
     "ratio": 2.5,
+
+    # The maximum age (in seconds) a filled order can be to be included in the price calculation.
+    "filled_order_age": 60 * 60 * 12,
+    # How much weight the time in seconds ago the order was filled has
+    "time_weight_factor": 0.2,
+    # Minimum volume in the last filled_order_age seconds (quote)
+    "minimum_volume": 1000,
+
 }
 
 
 # Turn this bot off if you don't borrow bitassets on the bot.
-bots["Collateral"] = {
-    "bot" : MaintainCollateralRatio,
-    "markets" : ["EUR : BTS", "SILVER : BTS", "CAD : BTS"],
-    "target_ratio" : 2.5,
-    "lower_threshold" : 2.3,
-    "upper_threshold" : 2.7,
-    "skip_blocks" : 1,
-}
+#bots["Collateral"] = {
+#    "bot" : MaintainCollateralRatio,
+#    "markets" : ["EUR : BTS", "SILVER : BTS", "CAD : BTS"],
+#    "target_ratio" : 2.5,
+#    "lower_threshold" : 2.3,
+#    "upper_threshold" : 2.7,
+#    "skip_blocks" : 1,
+#}
