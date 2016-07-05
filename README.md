@@ -1,6 +1,8 @@
 # bitshares2-liquiditybots
 
 
+## Most of the liqbot specific code and development has been merged/moved into: [StakeMachine](https://github.com/xeroc/stakemachine), please go there if you want a Bitshares trading bot.
+
 This docker-compose file runs a cli-wallet container and a bot that uses cli-wallet to connect with graphene.
 cli-wallet connects to the openledger full node and the bot does as well. To switch to your own full node (you should if you are running a bot),
 change "witness_url" in `./docker-exchangebot/exchangebot/config.py` and the -s option in `cli-wallet-start.sh`
